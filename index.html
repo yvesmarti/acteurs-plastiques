@@ -550,6 +550,136 @@
     .pop-link { display: inline-block; margin-top: 8px; font-size: .74rem; color: #1976d2; text-decoration: none; word-break: break-all; }
     .pop-link:hover { text-decoration: underline; }
 
+    /* ── ACTIVE FILTER CHIPS (above map) ── */
+    #active-chips {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      right: 200px;
+      z-index: 500;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      pointer-events: none;
+    }
+    #active-chips:empty { display: none; }
+    .filter-chip {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px 4px 10px;
+      background: rgba(255,255,255,.95);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      font-size: .73rem;
+      font-weight: 500;
+      color: var(--text);
+      box-shadow: 0 1px 4px rgba(0,0,0,.1);
+      max-width: 260px;
+    }
+    .filter-chip .chip-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .filter-chip .chip-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .filter-chip .chip-x {
+      background: none;
+      border: none;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #999;
+      font-size: .9rem;
+      line-height: 1;
+      padding: 0;
+      transition: background .12s, color .12s;
+    }
+    .filter-chip .chip-x:hover { background: #fee2e2; color: #dc2626; }
+    .filter-chip.chip-search { background: #fff7ed; border-color: #fed7aa; }
+    .filter-chip.chip-radius { background: #eff6ff; border-color: #bfdbfe; }
+
+    /* ── PROXIMITY SECTION (sidebar) ── */
+    #proximity-section {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+      background: #fafbfc;
+      flex-shrink: 0;
+    }
+    .prox-hdr {
+      font-size: 0.63rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .prox-row { display: flex; gap: 5px; align-items: center; margin-bottom: 6px; }
+    #prox-input {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 14px;
+      padding: 5px 9px;
+      font-size: 0.78rem;
+      font-family: inherit;
+      outline: none;
+      background: #fff;
+      min-width: 0;
+    }
+    #prox-input:focus { border-color: var(--blue); }
+    #prox-apply, #prox-clear {
+      background: none;
+      border: 1px solid var(--border);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      padding: 0;
+      font-size: .75rem;
+    }
+    #prox-apply:hover { border-color: var(--blue); background: #e3f2fd; }
+    #prox-clear { color: #999; }
+    #prox-clear:hover { border-color: #dc2626; color: #dc2626; background: #fee2e2; }
+    .prox-radius-row { display: flex; align-items: center; gap: 8px; font-size: .73rem; color: #666; }
+    #prox-radius { flex: 1; accent-color: var(--blue); cursor: pointer; }
+    #prox-radius-val { font-weight: 600; color: var(--text); min-width: 38px; text-align: right; }
+    #prox-status { font-size: .68rem; color: #999; margin-top: 4px; min-height: 1em; }
+    #prox-status.error { color: #dc2626; }
+    #prox-status.ok { color: var(--green-d); }
+
+    /* ── CSV EXPORT BUTTON (table header) ── */
+    .panel-hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    #csv-export-btn {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 11px;
+      font-size: .74rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    #csv-export-btn:hover { background: var(--green-d); }
+
+    /* Distance column visibility (toggled when radius filter is active) */
+    .col-distance { display: none; }
+    body.has-radius .col-distance { display: table-cell; }
+
     /* ── MOBILE ── */
     #toggle-btn {
       display: none;
@@ -635,6 +765,22 @@
 
     <div id="filters"><!-- généré dynamiquement --></div>
 
+    <div id="proximity-section">
+      <div class="prox-hdr">PROXIMITÉ</div>
+      <div class="prox-row">
+        <input type="text" id="prox-input" list="commune-list" placeholder="Commune (ex : Caen)" autocomplete="off">
+        <button id="prox-apply" title="Appliquer">⚲</button>
+        <button id="prox-clear" title="Retirer le filtre" style="display:none;">×</button>
+      </div>
+      <datalist id="commune-list"></datalist>
+      <div class="prox-radius-row">
+        <span>Rayon</span>
+        <input type="range" id="prox-radius" min="5" max="200" step="5" value="30">
+        <span id="prox-radius-val">30 km</span>
+      </div>
+      <div id="prox-status"></div>
+    </div>
+
     <div id="sidebar-foot">
       <div id="results-count">…</div>
       <button id="reset-btn">↺ Réinitialiser les filtres</button>
@@ -659,6 +805,9 @@
 
     <button id="expand-btn" title="Afficher le panneau">▶</button>
 
+    <!-- Active filter chips (above map) -->
+    <div id="active-chips"></div>
+
     <!-- Legend -->
     <div id="legend">
       <div id="legend-hdr">
@@ -679,7 +828,10 @@
 
     <!-- Table panel -->
     <div id="table-panel" class="view-panel">
-      <div class="panel-hdr" id="table-hdr">Tableau</div>
+      <div class="panel-hdr" id="table-hdr">
+        <span id="table-count">Tableau</span>
+        <button id="csv-export-btn" title="Exporter les résultats filtrés en CSV">⤓ CSV</button>
+      </div>
       <table id="data-table">
         <thead>
           <tr>
@@ -687,6 +839,7 @@
             <th data-col="type_acteur">Type d'acteur <span class="sort-icon">↕</span></th>
             <th data-col="commune">Commune <span class="sort-icon">↕</span></th>
             <th data-col="type_resine">Résines <span class="sort-icon">↕</span></th>
+            <th data-col="distance" class="col-distance">Distance <span class="sort-icon">↕</span></th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
@@ -795,6 +948,26 @@ let activeFilters = {};
 let currentView = 'carte';
 let sortCol = null;
 let sortDir = 1;
+let radiusFilter = null;   // { commune, lat, lng, km } when active
+let radiusCircle = null;   // Leaflet circle layer
+let countEls = {};         // { 'type_acteur:Trieur': <span>, ... } for dynamic counters
+let suppressUrlSync = false;
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function actorDistance(a) {
+  if (!radiusFilter || a.lat == null || a.lng == null) return null;
+  return haversineKm(radiusFilter.lat, radiusFilter.lng, a.lat, a.lng);
+}
 
 function acteurInfo(typeActeur) {
   const key = Array.isArray(typeActeur) ? typeActeur[0] : typeActeur;
@@ -822,6 +995,7 @@ document.querySelectorAll('.view-btn').forEach(btn => {
     if (view === 'liste')   { listPanel.classList.add('open');  renderCards(); }
     if (view === 'tableau') { tablePanel.classList.add('open'); renderTable(); }
     if (view === 'carte')   { setTimeout(() => map.invalidateSize(), 50); }
+    syncUrl();
   });
 });
 
@@ -906,6 +1080,7 @@ function countValue(field, val, isArray) {
 function buildFilters() {
   const container = document.getElementById('filters');
   container.innerHTML = '';
+  countEls = {};
 
   CONFIG.filterFields.forEach(({ key, label, isArray }) => {
     const vals = uniqueValues(key, isArray);
@@ -965,6 +1140,7 @@ function buildFilters() {
       const countEl = document.createElement('span');
       countEl.className = 'filter-count';
       countEl.textContent = count;
+      countEls[`${key}:${val}`] = countEl;
 
       const soloBtn = document.createElement('button');
       soloBtn.className = 'solo-btn';
@@ -1011,6 +1187,100 @@ function soloFilter(key, val) {
 }
 
 /* ════════════════════════════════════════
+   ACTIVE FILTER CHIPS (above map)
+════════════════════════════════════════ */
+function renderActiveChips() {
+  const bar = document.getElementById('active-chips');
+  bar.innerHTML = '';
+
+  const searchVal = document.getElementById('search-input').value.trim();
+  if (searchVal) {
+    bar.appendChild(makeChip({
+      cls: 'chip-search',
+      label: `🔎 "${searchVal}"`,
+      onRemove: () => {
+        document.getElementById('search-input').value = '';
+        updateView();
+      }
+    }));
+  }
+
+  CONFIG.filterFields.forEach(({ key, label, isArray }) => {
+    const all = uniqueValues(key, isArray);
+    const active = activeFilters[key] || new Set();
+    const excluded = all.filter(v => !active.has(v));
+    excluded.forEach(val => {
+      const color = key === 'type_acteur'
+        ? (CONFIG.acteurConfig[val] || CONFIG.acteurConfig.default).color
+        : '#0e7490';
+      bar.appendChild(makeChip({
+        dot: color,
+        label: `Sans : ${val}`,
+        onRemove: () => {
+          activeFilters[key].add(val);
+          const cb = document.querySelector(`.filter-cb[data-key="${key}"][data-val="${cssEscape(val)}"]`);
+          if (cb) cb.checked = true;
+          syncMasterCb(key);
+          updateView();
+        }
+      }));
+    });
+  });
+
+  if (radiusFilter) {
+    bar.appendChild(makeChip({
+      cls: 'chip-radius',
+      label: `📍 ≤ ${radiusFilter.km} km de ${radiusFilter.commune}`,
+      onRemove: () => clearRadius()
+    }));
+  }
+}
+
+function makeChip({ cls = '', dot = null, label, onRemove }) {
+  const el = document.createElement('div');
+  el.className = 'filter-chip' + (cls ? ' ' + cls : '');
+  if (dot) {
+    const d = document.createElement('span');
+    d.className = 'chip-dot';
+    d.style.background = dot;
+    el.appendChild(d);
+  }
+  const lab = document.createElement('span');
+  lab.className = 'chip-label';
+  lab.textContent = label;
+  lab.title = label;
+  el.appendChild(lab);
+  const btn = document.createElement('button');
+  btn.className = 'chip-x';
+  btn.type = 'button';
+  btn.textContent = '×';
+  btn.title = 'Retirer';
+  btn.addEventListener('click', onRemove);
+  el.appendChild(btn);
+  return el;
+}
+
+function cssEscape(s) {
+  if (window.CSS && CSS.escape) return CSS.escape(s);
+  return String(s).replace(/["\\]/g, '\\$&');
+}
+
+/* ════════════════════════════════════════
+   COMMUNE DATALIST
+════════════════════════════════════════ */
+function buildCommuneList() {
+  const dl = document.getElementById('commune-list');
+  dl.innerHTML = '';
+  const set = new Set();
+  allData.forEach(a => { if (a.commune) set.add(a.commune); });
+  [...set].sort((a, b) => a.localeCompare(b, 'fr')).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c;
+    dl.appendChild(o);
+  });
+}
+
+/* ════════════════════════════════════════
    RESET
 ════════════════════════════════════════ */
 document.getElementById('reset-btn').addEventListener('click', () => {
@@ -1024,6 +1294,7 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     if (m) { m.checked = true; m.indeterminate = false; }
   });
   document.getElementById('search-input').value = '';
+  clearRadius({ skipUpdate: true });
   updateView();
 });
 
@@ -1060,15 +1331,20 @@ expandBtn.addEventListener('click', () => {
 /* ════════════════════════════════════════
    FILTER
 ════════════════════════════════════════ */
-function getFiltered() {
-  const q = document.getElementById('search-input').value.toLowerCase();
+function getFiltered(opts = {}) {
+  const skipKey = opts.skipKey || null;
+  const q = document.getElementById('search-input').value.toLowerCase().trim();
   return allData.filter(a => {
     if (q) {
-      const hay = [a.nom, a.commune, a.adresse, a.description]
-        .filter(Boolean).join(' ').toLowerCase();
+      const hay = [
+        a.nom, a.commune, a.adresse, a.description,
+        ...(Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur]),
+        ...(Array.isArray(a.type_resine) ? a.type_resine : [a.type_resine])
+      ].filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
     for (const { key, isArray } of CONFIG.filterFields) {
+      if (key === skipKey) continue;
       const active = activeFilters[key];
       if (!active || active.size === 0) return false;
       if (isArray) {
@@ -1077,7 +1353,27 @@ function getFiltered() {
         if (!active.has(a[key])) return false;
       }
     }
+    if (radiusFilter) {
+      if (a.lat == null || a.lng == null) return false;
+      if (haversineKm(radiusFilter.lat, radiusFilter.lng, a.lat, a.lng) > radiusFilter.km) return false;
+    }
     return true;
+  });
+}
+
+function dynamicCount(key, val, isArray) {
+  const base = getFiltered({ skipKey: key });
+  if (isArray) return base.filter(a => (a[key] || []).includes(val)).length;
+  return base.filter(a => a[key] === val).length;
+}
+
+function refreshCounts() {
+  CONFIG.filterFields.forEach(({ key, isArray }) => {
+    const vals = uniqueValues(key, isArray);
+    vals.forEach(val => {
+      const el = countEls[`${key}:${val}`];
+      if (el) el.textContent = dynamicCount(key, val, isArray);
+    });
   });
 }
 
@@ -1133,18 +1429,25 @@ function renderCards() {
 /* ════════════════════════════════════════
    RENDER: TABLE (with sort)
 ════════════════════════════════════════ */
-function renderTable() {
+function getSortedFiltered() {
   let filtered = getFiltered();
-  document.getElementById('table-hdr').innerHTML =
-    `<strong>${filtered.length}</strong> acteur${filtered.length > 1 ? 's' : ''}`;
-
-  if (sortCol) {
+  const col = sortCol || (radiusFilter ? 'distance' : null);
+  if (col) {
+    const dir = sortCol ? sortDir : 1;
     filtered = [...filtered].sort((a, b) => {
-      const va = colVal(a, sortCol);
-      const vb = colVal(b, sortCol);
-      return va.localeCompare(vb, 'fr', { sensitivity: 'base' }) * sortDir;
+      const va = colVal(a, col);
+      const vb = colVal(b, col);
+      if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
+      return String(va).localeCompare(String(vb), 'fr', { sensitivity: 'base' }) * dir;
     });
   }
+  return filtered;
+}
+
+function renderTable() {
+  const filtered = getSortedFiltered();
+  document.getElementById('table-count').innerHTML =
+    `<strong>${filtered.length}</strong> acteur${filtered.length > 1 ? 's' : ''}`;
 
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
@@ -1154,12 +1457,15 @@ function renderTable() {
       const { color } = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
       return `<span class="lt-dot" style="background:${color}"></span>${t}`;
     }).join(', ');
+    const dist = actorDistance(a);
+    const distCell = dist != null ? `${dist.toFixed(1)} km` : '—';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><strong>${a.nom}</strong></td>
       <td>${typesHtml}</td>
       <td>${a.commune || a.adresse || '—'}</td>
-      <td>${(a.type_resine || []).join(', ') || '—'}</td>`;
+      <td>${(a.type_resine || []).join(', ') || '—'}</td>
+      <td class="col-distance">${distCell}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1169,6 +1475,10 @@ function colVal(a, col) {
   if (col === 'type_acteur')  return (Array.isArray(a.type_acteur) ? a.type_acteur[0] : a.type_acteur) || '';
   if (col === 'commune')      return a.commune || a.adresse || '';
   if (col === 'type_resine')  return (a.type_resine || []).join(',');
+  if (col === 'distance') {
+    const d = actorDistance(a);
+    return d == null ? Infinity : d;
+  }
   return '';
 }
 
@@ -1189,6 +1499,7 @@ document.querySelectorAll('#data-table th').forEach(th => {
     th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
     th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
     renderTable();
+    syncUrl();
   });
 });
 
@@ -1202,8 +1513,249 @@ function updateView() {
     `<strong>${n}</strong> acteur${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${allData.length}`;
 
   renderMap(filtered);
+  renderActiveChips();
+  refreshCounts();
   if (currentView === 'liste')   renderCards();
   if (currentView === 'tableau') renderTable();
+  syncUrl();
+}
+
+/* ════════════════════════════════════════
+   RADIUS FILTER (proximity)
+════════════════════════════════════════ */
+function findLocalCommune(name) {
+  const target = name.trim().toLowerCase();
+  if (!target) return null;
+  const hit = allData.find(a => a.commune && a.commune.toLowerCase() === target
+                                  && a.lat != null && a.lng != null);
+  if (hit) return { commune: hit.commune, lat: hit.lat, lng: hit.lng };
+  return null;
+}
+
+async function geocodeCommune(name) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ', France')}&format=json&limit=1&countrycodes=fr`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const arr = await res.json();
+  if (!arr.length) throw new Error('Commune introuvable');
+  return {
+    commune: name,
+    lat: parseFloat(arr[0].lat),
+    lng: parseFloat(arr[0].lon)
+  };
+}
+
+function drawRadiusCircle(recenter = true) {
+  if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
+  if (!radiusFilter) return;
+  radiusCircle = L.circle([radiusFilter.lat, radiusFilter.lng], {
+    radius: radiusFilter.km * 1000,
+    color: '#1976d2',
+    weight: 2,
+    fillColor: '#1976d2',
+    fillOpacity: 0.07,
+    interactive: false
+  }).addTo(map);
+  if (recenter) {
+    map.fitBounds(radiusCircle.getBounds(), { padding: [40, 40], maxZoom: 12 });
+  }
+}
+
+async function setRadius(commune, km, opts = {}) {
+  const status = document.getElementById('prox-status');
+  status.className = '';
+  status.textContent = '';
+  if (!commune) return;
+  let resolved = findLocalCommune(commune);
+  if (!resolved) {
+    status.textContent = 'Recherche…';
+    try {
+      resolved = await geocodeCommune(commune);
+    } catch (e) {
+      status.className = 'error';
+      status.textContent = 'Commune introuvable';
+      return;
+    }
+  }
+  radiusFilter = { commune: resolved.commune, lat: resolved.lat, lng: resolved.lng, km };
+  document.body.classList.add('has-radius');
+  document.getElementById('prox-clear').style.display = '';
+  status.className = 'ok';
+  status.textContent = `📍 ${resolved.commune}`;
+  drawRadiusCircle(opts.recenter !== false);
+  updateView();
+}
+
+function clearRadius(opts = {}) {
+  radiusFilter = null;
+  if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
+  document.body.classList.remove('has-radius');
+  document.getElementById('prox-input').value = '';
+  document.getElementById('prox-clear').style.display = 'none';
+  const status = document.getElementById('prox-status');
+  status.className = '';
+  status.textContent = '';
+  if (!opts.skipUpdate) updateView();
+}
+
+document.getElementById('prox-apply').addEventListener('click', () => {
+  const v = document.getElementById('prox-input').value.trim();
+  const km = parseInt(document.getElementById('prox-radius').value, 10);
+  if (v) setRadius(v, km);
+});
+document.getElementById('prox-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('prox-apply').click();
+  }
+});
+document.getElementById('prox-clear').addEventListener('click', () => clearRadius());
+
+const radiusSlider = document.getElementById('prox-radius');
+const radiusLabel  = document.getElementById('prox-radius-val');
+radiusSlider.addEventListener('input', () => {
+  radiusLabel.textContent = radiusSlider.value + ' km';
+});
+radiusSlider.addEventListener('change', () => {
+  if (radiusFilter) {
+    radiusFilter.km = parseInt(radiusSlider.value, 10);
+    drawRadiusCircle(false);
+    updateView();
+  }
+});
+
+/* ════════════════════════════════════════
+   CSV EXPORT
+════════════════════════════════════════ */
+function csvCell(v) {
+  if (v == null) return '';
+  const s = String(v);
+  if (/[",;\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function exportCsv() {
+  const rows = getSortedFiltered();
+  const hasRadius = !!radiusFilter;
+  const headers = ['Nom', "Type d'acteur", 'Commune', 'Code postal', 'Adresse', 'Résines', 'Téléphone', 'Email', 'Site web', 'Latitude', 'Longitude'];
+  if (hasRadius) headers.push('Distance (km)');
+  const lines = [headers.map(csvCell).join(';')];
+  rows.forEach(a => {
+    const cells = [
+      a.nom,
+      (a.type_acteur || []).join(', '),
+      a.commune || '',
+      a.code_postal || '',
+      a.adresse || '',
+      (a.type_resine || []).join(', '),
+      a.telephone || '',
+      a.email || '',
+      a.site_web || '',
+      a.lat != null ? a.lat : '',
+      a.lng != null ? a.lng : ''
+    ];
+    if (hasRadius) {
+      const d = actorDistance(a);
+      cells.push(d != null ? d.toFixed(2) : '');
+    }
+    lines.push(cells.map(csvCell).join(';'));
+  });
+  const csv = '﻿' + lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = `acteurs-plastiques-${date}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('csv-export-btn').addEventListener('click', exportCsv);
+
+/* ════════════════════════════════════════
+   URL SYNC (shareable state)
+════════════════════════════════════════ */
+function syncUrl() {
+  if (suppressUrlSync) return;
+  const params = new URLSearchParams();
+  const q = document.getElementById('search-input').value.trim();
+  if (q) params.set('q', q);
+  CONFIG.filterFields.forEach(({ key, isArray }) => {
+    const all = uniqueValues(key, isArray);
+    const active = activeFilters[key] || new Set();
+    if (active.size !== all.length) {
+      const short = key === 'type_acteur' ? 'types' : key === 'type_resine' ? 'resines' : key;
+      params.set(short, [...active].join(','));
+    }
+  });
+  if (currentView !== 'carte') params.set('view', currentView);
+  if (radiusFilter) {
+    params.set('commune', radiusFilter.commune);
+    params.set('radius', String(radiusFilter.km));
+  }
+  if (sortCol) params.set('sort', `${sortCol}:${sortDir === 1 ? 'asc' : 'desc'}`);
+  const qs = params.toString();
+  const newUrl = location.pathname + (qs ? '?' + qs : '');
+  history.replaceState(null, '', newUrl);
+}
+
+function applyUrlState() {
+  const params = new URLSearchParams(location.search);
+  suppressUrlSync = true;
+
+  const q = params.get('q');
+  if (q) document.getElementById('search-input').value = q;
+
+  const keyMap = { types: 'type_acteur', resines: 'type_resine' };
+  Object.entries(keyMap).forEach(([short, key]) => {
+    if (!params.has(short)) return;
+    const wanted = new Set(params.get(short).split(',').filter(Boolean));
+    document.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(cb => {
+      cb.checked = wanted.has(cb.dataset.val);
+    });
+    activeFilters[key] = new Set(
+      [...document.querySelectorAll(`.filter-cb[data-key="${key}"]`)]
+        .filter(cb => cb.checked).map(cb => cb.dataset.val)
+    );
+    syncMasterCb(key);
+  });
+
+  const view = params.get('view');
+  if (view && ['carte', 'liste', 'tableau'].includes(view)) {
+    const btn = document.querySelector(`.view-btn[data-view="${view}"]`);
+    if (btn && view !== currentView) btn.click();
+  }
+
+  const sortP = params.get('sort');
+  if (sortP) {
+    const [col, dir] = sortP.split(':');
+    sortCol = col;
+    sortDir = dir === 'desc' ? -1 : 1;
+    document.querySelectorAll('#data-table th').forEach(h => {
+      h.classList.remove('sort-asc', 'sort-desc');
+      h.querySelector('.sort-icon').textContent = '↕';
+    });
+    const th = document.querySelector(`#data-table th[data-col="${col}"]`);
+    if (th) {
+      th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+      th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
+    }
+  }
+
+  const commune = params.get('commune');
+  const radius = params.get('radius');
+  suppressUrlSync = false;
+
+  if (commune && radius) {
+    const km = parseInt(radius, 10);
+    document.getElementById('prox-input').value = commune;
+    document.getElementById('prox-radius').value = String(km);
+    document.getElementById('prox-radius-val').textContent = km + ' km';
+    setRadius(commune, km, { recenter: true });
+  }
 }
 
 /* ════════════════════════════════════════
@@ -1233,7 +1785,9 @@ fetch(CONFIG.dataUrl)
   .then(data => {
     allData = data;
     buildFilters();
+    buildCommuneList();
     buildLegend();
+    applyUrlState();
     updateView();
   })
   .catch(err => {

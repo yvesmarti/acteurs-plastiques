@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carte des Acteurs</title>
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* =====================================================
+       VARIABLES & RESET
+    ===================================================== */
+    :root {
+      --sidebar-w: 300px;
+      --navy:       #0f1d3a;
+      --navy-mid:   #162344;
+      --navy-light: #1a2f5a;
+      --blue:       #2563eb;
+      --blue-lt:    #3b82f6;
+      --accent:     #38bdf8;
+      --bg:         #f1f5f9;
+      --text:       #1e293b;
+      --muted:      #64748b;
+      --border:     #e2e8f0;
+      --white:      #ffffff;
+
+      /* Couleurs par type d'acteur — à adapter selon votre cas d'usage */
+      --c-collecteur:   #3b82f6;
+      --c-recycleur:    #10b981;
+      --c-valorisateur: #f59e0b;
+      --c-producteur:   #8b5cf6;
+      --c-distributeur: #ef4444;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* =====================================================
+       SIDEBAR
+    ===================================================== */
+    #sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+
+    /* En-tête */
+    #sidebar-header {
+      padding: 18px 18px 14px;
+      background: var(--navy-light);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    #sidebar-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1.25;
+      margin-bottom: 3px;
+    }
+    #sidebar-header p {
+      font-size: 0.72rem;
+      color: rgba(255,255,255,0.45);
+    }
+
+    /* Recherche */
+    #search-box {
+      padding: 12px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    #search-input {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 7px;
+      padding: 7px 11px;
+      color: var(--white);
+      font-family: inherit;
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    #search-input::placeholder { color: rgba(255,255,255,0.3); }
+    #search-input:focus        { border-color: var(--accent); }
+
+    /* Zone de filtres scrollable */
+    #filters {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.12) transparent;
+    }
+
+    .filter-section {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .filter-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+    .filter-title span {
+      font-size: 0.67rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: rgba(255,255,255,0.38);
+    }
+    .filter-title button {
+      font-size: 0.63rem;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.28);
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0;
+      transition: color 0.15s;
+    }
+    .filter-title button:hover { color: var(--accent); }
+
+    .filter-options {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    /* Chips de filtre */
+    .filter-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 20px;
+      border: 1.5px solid transparent;
+      background: rgba(255,255,255,0.05);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.76rem;
+      color: rgba(255,255,255,0.45);
+      transition: all 0.14s;
+      user-select: none;
+    }
+    .filter-chip:hover {
+      background: rgba(255,255,255,0.1);
+      color: var(--white);
+    }
+    .filter-chip.active {
+      color: rgba(255,255,255,0.92);
+      font-weight: 500;
+    }
+    .chip-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Pied de sidebar */
+    #sidebar-footer {
+      padding: 10px 14px;
+      background: rgba(0,0,0,0.18);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+    #results-count {
+      font-size: 0.76rem;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 7px;
+    }
+    #results-count strong { color: var(--accent); font-weight: 600; }
+
+    #reset-btn {
+      width: 100%;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 6px;
+      color: rgba(255,255,255,0.38);
+      font-family: inherit;
+      font-size: 0.73rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    #reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* =====================================================
+       MAP
+    ===================================================== */
+    #map {
+      flex: 1;
+      height: 100vh;
+    }
+
+    /* =====================================================
+       POPUP PERSONNALISÉE
+    ===================================================== */
+    .custom-popup .leaflet-popup-content-wrapper {
+      border-radius: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      padding: 0;
+      overflow: hidden;
+    }
+    .custom-popup .leaflet-popup-content { margin: 0; width: 260px !important; }
+    .custom-popup .leaflet-popup-tip     { background: var(--white); }
+
+    .pop-header {
+      padding: 11px 13px 9px;
+      border-left: 4px solid var(--pop-color, #3b82f6);
+    }
+    .pop-nom  { font-weight: 600; font-size: 0.92rem; color: var(--text); line-height: 1.3; }
+    .pop-type { font-size: 0.71rem; color: var(--muted); margin-top: 2px; }
+
+    .pop-body {
+      padding: 8px 13px 12px;
+      border-top: 1px solid var(--border);
+    }
+    .pop-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 5px;
+      font-size: 0.77rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .pop-row .icon { flex-shrink: 0; }
+    .pop-resines {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    .res-badge {
+      font-size: 0.67rem;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .pop-link {
+      display: inline-block;
+      margin-top: 8px;
+      font-size: 0.74rem;
+      color: var(--blue-lt);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .pop-link:hover { text-decoration: underline; }
+
+    /* =====================================================
+       BOUTON MOBILE (masquer sidebar)
+    ===================================================== */
+    #toggle-btn {
+      display: none;
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      z-index: 2000;
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      font-size: 1.15rem;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 768px) {
+      #sidebar {
+        position: fixed;
+        left: 0; top: 0;
+        transform: translateX(-100%);
+      }
+      #sidebar.open  { transform: translateX(0); }
+      #toggle-btn    { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== SIDEBAR ========== -->
+<div id="sidebar">
+
+  <div id="sidebar-header">
+    <h1>Acteurs Plastiques Normandie</h1>
+    <p id="data-info">Chargement…</p>
+  </div>
+
+  <div id="search-box">
+    <input type="text" id="search-input" placeholder="🔍 Nom, commune, description…">
+  </div>
+
+  <div id="filters">
+    <!-- généré dynamiquement par JS -->
+  </div>
+
+  <div id="sidebar-footer">
+    <div id="results-count">…</div>
+    <button id="reset-btn">↺ Réinitialiser les filtres</button>
+  </div>
+
+</div>
+
+<!-- ========== CARTE ========== -->
+<div id="map"></div>
+
+<!-- Bouton pour afficher/masquer la sidebar sur mobile -->
+<button id="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+
+<script>
+/* ======================================================
+   CONFIGURATION — adaptez selon votre projet
+====================================================== */
+const CONFIG = {
+
+  // Chemin vers le fichier JSON (relatif à index.html)
+  dataUrl: 'data/acteurs.json',
+
+  // Centre et zoom initial de la carte
+  mapCenter: [49.1, 0.3],
+  mapZoom: 8,
+
+  // Définition des filtres affichés dans la sidebar.
+  //   key      → nom du champ dans le JSON
+  //   label    → titre affiché dans la sidebar
+  //   isArray  → true si le champ JSON est un tableau
+  filterFields: [
+    { key: 'type_acteur', label: "Type d'acteur",  isArray: true },
+    { key: 'type_resine', label: 'Type de résine', isArray: true }
+  ],
+
+  // Couleurs des marqueurs par type d'acteur (couleur du 1er type de la liste)
+  acteurColors: {
+    'Trieur':       '#f59e0b',
+    'Broyeur':      '#ef4444',
+    'Recycleur':    '#10b981',
+    'Négociant':    '#eab308',
+    'Plasturgiste': '#3b82f6',
+    'Autres':       '#94a3b8',
+    'Collecteur':   '#8b5cf6',
+    'default':      '#64748b'
+  }
+
+};
+
+/* ======================================================
+   INITIALISATION DE LA CARTE LEAFLET
+====================================================== */
+const map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
+
+// Fond de carte OpenStreetMap (style clair)
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
+  maxZoom: 19
+}).addTo(map);
+
+// Groupe de marqueurs avec clustering automatique
+const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 60 });
+map.addLayer(clusterGroup);
+
+/* ======================================================
+   DONNÉES & ÉTAT
+====================================================== */
+let allData     = [];
+let activeFilters = {};   // { "type_acteur": Set{"Collecteur","Recycleur"}, … }
+
+// Retourne la couleur hex pour un type d'acteur
+// type_acteur peut être un tableau (ex: ["Collecteur","Recycleur"]) → on prend le 1er
+function getColor(typeActeur) {
+  const key = Array.isArray(typeActeur) ? typeActeur[0] : typeActeur;
+  return CONFIG.acteurColors[key] || CONFIG.acteurColors['default'];
+}
+
+/* ======================================================
+   ICÔNE MARQUEUR SVG (pin coloré)
+====================================================== */
+function makeIcon(color) {
+  return L.divIcon({
+    className: '',
+    html: `<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 0C5.82 0 0 5.82 0 13c0 8.67 13 21 13 21S26 21.67 26 13C26 5.82 20.18 0 13 0z"
+            fill="${color}" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
+      <circle cx="13" cy="13" r="5.5" fill="rgba(255,255,255,0.9)"/>
+    </svg>`,
+    iconSize:    [26, 34],
+    iconAnchor:  [13, 34],
+    popupAnchor: [0, -36]
+  });
+}
+
+/* ======================================================
+   CONTENU DU POPUP
+====================================================== */
+function buildPopup(a) {
+  const color  = getColor(a.type_acteur);
+  const badges = (a.type_resine || []).map(r =>
+    `<span class="res-badge">${r}</span>`).join('');
+
+  let rows = '';
+  if (a.commune)    rows += `<div class="pop-row"><span class="icon">📍</span><span>${a.commune}${a.code_postal ? ' (' + a.code_postal + ')' : ''}</span></div>`;
+  if (a.telephone)  rows += `<div class="pop-row"><span class="icon">📞</span><span>${a.telephone}</span></div>`;
+  if (a.email)      rows += `<div class="pop-row"><span class="icon">✉️</span><a href="mailto:${a.email}">${a.email}</a></div>`;
+  if (a.description)rows += `<div class="pop-row"><span class="icon">ℹ️</span><span>${a.description}</span></div>`;
+
+  return `
+    <div class="pop-header" style="--pop-color:${color}">
+      <div class="pop-nom">${a.nom}</div>
+      <div class="pop-type">${Array.isArray(a.type_acteur) ? a.type_acteur.join(', ') : (a.type_acteur || '')}</div>
+    </div>
+    <div class="pop-body">
+      ${rows}
+      ${badges ? `<div class="pop-resines">${badges}</div>` : ''}
+      ${a.site_web ? `<a class="pop-link" href="${a.site_web}" target="_blank" rel="noopener">🔗 ${a.site_web}</a>` : ''}
+    </div>`;
+}
+
+/* ======================================================
+   FILTRES — construction dynamique
+====================================================== */
+
+// Récupère les valeurs uniques d'un champ (tableau ou scalaire)
+function uniqueValues(field, isArray) {
+  const s = new Set();
+  allData.forEach(a => {
+    if (isArray && Array.isArray(a[field])) a[field].forEach(v => s.add(v));
+    else if (a[field]) s.add(a[field]);
+  });
+  return [...s].sort();
+}
+
+function buildFilters() {
+  const container = document.getElementById('filters');
+  container.innerHTML = '';
+
+  CONFIG.filterFields.forEach(({ key, label, isArray }) => {
+    const vals = uniqueValues(key, isArray);
+    if (!vals.length) return;
+
+    // Tout actif par défaut
+    activeFilters[key] = new Set(vals);
+
+    const section = document.createElement('div');
+    section.className = 'filter-section';
+
+    // Titre + bouton "tout déselectionner"
+    const titleEl = document.createElement('div');
+    titleEl.className = 'filter-title';
+    titleEl.innerHTML = `
+      <span>${label}</span>
+      <button onclick="clearFilter('${key}')">tout déselectionner</button>`;
+    section.appendChild(titleEl);
+
+    // Chips
+    const opts = document.createElement('div');
+    opts.className = 'filter-options';
+
+    vals.forEach(val => {
+      const color = key === 'type_acteur' ? getColor(val) : '#38bdf8';
+      const chip  = document.createElement('button');
+      chip.className    = 'filter-chip active';
+      chip.dataset.key  = key;
+      chip.dataset.val  = val;
+      chip.innerHTML    = `<span class="chip-dot" style="background:${color}"></span>${val}`;
+      chip.style.borderColor = color;
+      chip.style.color       = 'rgba(255,255,255,0.9)';
+
+      chip.addEventListener('click', () => toggleFilter(key, val, chip, color));
+      opts.appendChild(chip);
+    });
+
+    section.appendChild(opts);
+    container.appendChild(section);
+  });
+}
+
+function toggleFilter(key, val, chip, color) {
+  if (activeFilters[key].has(val)) {
+    activeFilters[key].delete(val);
+    chip.classList.remove('active');
+    chip.style.borderColor = 'transparent';
+    chip.style.color       = '';
+  } else {
+    activeFilters[key].add(val);
+    chip.classList.add('active');
+    chip.style.borderColor = color;
+    chip.style.color       = 'rgba(255,255,255,0.9)';
+  }
+  updateMap();
+}
+
+function clearFilter(key) {
+  activeFilters[key].clear();
+  document.querySelectorAll(`.filter-chip[data-key="${key}"]`).forEach(c => {
+    c.classList.remove('active');
+    c.style.borderColor = 'transparent';
+    c.style.color       = '';
+  });
+  updateMap();
+}
+
+// Réinitialiser tous les filtres
+document.getElementById('reset-btn').addEventListener('click', () => {
+  CONFIG.filterFields.forEach(({ key, isArray }) => {
+    const vals = uniqueValues(key, isArray);
+    activeFilters[key] = new Set(vals);
+    document.querySelectorAll(`.filter-chip[data-key="${key}"]`).forEach(c => {
+      const color = key === 'type_acteur' ? getColor(c.dataset.val) : '#38bdf8';
+      c.classList.add('active');
+      c.style.borderColor = color;
+      c.style.color       = 'rgba(255,255,255,0.9)';
+    });
+  });
+  document.getElementById('search-input').value = '';
+  updateMap();
+});
+
+document.getElementById('search-input').addEventListener('input', updateMap);
+
+/* ======================================================
+   MISE À JOUR DE LA CARTE
+====================================================== */
+function getFiltered() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+
+  return allData.filter(a => {
+    // Recherche texte libre
+    if (q) {
+      const hay = [a.nom, a.commune, a.adresse, a.description]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+
+    // Un filtre vide → rien affiché (comportement intentionnel)
+    for (const { key, isArray } of CONFIG.filterFields) {
+      const active = activeFilters[key];
+      if (!active || active.size === 0) return false;
+
+      if (isArray) {
+        const vals = a[key] || [];
+        if (!vals.some(v => active.has(v))) return false;
+      } else {
+        if (!active.has(a[key])) return false;
+      }
+    }
+    return true;
+  });
+}
+
+function updateMap() {
+  clusterGroup.clearLayers();
+  const filtered = getFiltered();
+
+  filtered.forEach(a => {
+    if (a.lat == null || a.lng == null) return;   // ignorer si pas de coords
+    const marker = L.marker([a.lat, a.lng], { icon: makeIcon(getColor(a.type_acteur)) });
+    marker.bindPopup(buildPopup(a), { className: 'custom-popup', maxWidth: 280 });
+    clusterGroup.addLayer(marker);
+  });
+
+  const n = filtered.length;
+  document.getElementById('results-count').innerHTML =
+    `<strong>${n}</strong> acteur${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${allData.length}`;
+}
+
+/* ======================================================
+   CHARGEMENT DES DONNÉES
+====================================================== */
+fetch(CONFIG.dataUrl)
+  .then(r => {
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.json();
+  })
+  .then(data => {
+    allData = data;
+    document.getElementById('data-info').textContent =
+      `${data.length} acteur${data.length > 1 ? 's' : ''} chargé${data.length > 1 ? 's' : ''}`;
+    buildFilters();
+    updateMap();
+  })
+  .catch(err => {
+    console.error('Erreur chargement JSON :', err);
+    document.getElementById('data-info').textContent = '⚠️ Erreur de chargement';
+    document.getElementById('results-count').innerHTML =
+      '<span style="color:#f87171">Impossible de charger data/acteurs.json — voir README</span>';
+  });
+</script>
+
+</body>
+</html>

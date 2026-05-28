@@ -1,0 +1,545 @@
+[
+  {
+    "nom": "RecyOuest",
+    "adresse": "8 Rue Léopold Sédar-Senghor",
+    "type_acteur": [
+      "Recycleur"
+    ],
+    "type_resine": [
+      "PEHD",
+      "PP"
+    ],
+    "lat": 49.18851,
+    "lng": -0.30755
+  },
+  {
+    "nom": "SIFF",
+    "commune": "SAUVEUR LE VICOMPTE",
+    "type_acteur": [
+      "Recycleur",
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD"
+    ],
+    "lat": 49.38821,
+    "lng": -1.52446
+  },
+  {
+    "nom": "Amandis SAS",
+    "commune": "ST LAURENT EN CAUX",
+    "type_acteur": [
+      "Plasturgiste",
+      "Autres"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PP",
+      "PET",
+      "PS",
+      "PVC",
+      "PABS"
+    ],
+    "lat": 49.75479,
+    "lng": 0.90347
+  },
+  {
+    "nom": "Vexin polymeres",
+    "commune": "STZE GENEVIEVE LES GASNY",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [],
+    "lat": 49.07807,
+    "lng": 1.56868
+  },
+  {
+    "nom": "GDE",
+    "commune": "ROCQUANCOURT",
+    "type_acteur": [
+      "Recycleur",
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PEHD",
+      "PP"
+    ],
+    "lat": 49.09094,
+    "lng": -0.30628
+  },
+  {
+    "nom": "IDC",
+    "commune": "BAYEUX",
+    "type_acteur": [
+      "Autres"
+    ],
+    "type_resine": [
+      "PEHD",
+      "PC",
+      "PABS"
+    ],
+    "lat": 49.26438,
+    "lng": -0.68941
+  },
+  {
+    "nom": "ECI Plastiform",
+    "commune": "VIMOUTIERS",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [],
+    "lat": 48.93775,
+    "lng": 0.19709
+  },
+  {
+    "nom": "DEHONDT COMPOSITES",
+    "commune": "PORT JEROME SUR SEINE",
+    "type_acteur": [
+      "Plasturgiste",
+      "Autres"
+    ],
+    "type_resine": [
+      "PA",
+      "PP",
+      "PET"
+    ],
+    "lat": 49.48341,
+    "lng": 0.5752
+  },
+  {
+    "nom": "Graham packaging normandy",
+    "commune": "CREULLY SUR SEULLES",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEHD"
+    ],
+    "lat": 49.28543,
+    "lng": -0.54038
+  },
+  {
+    "nom": "NATUREPLAST",
+    "commune": "IFS",
+    "type_acteur": [
+      "Négociant"
+    ],
+    "type_resine": [],
+    "lat": 49.14241,
+    "lng": -0.34242
+  },
+  {
+    "nom": "TAG Plastique",
+    "commune": "VALLIQUERVILLE",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PA",
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PET",
+      "PS",
+      "PVC",
+      "PUR",
+      "PC",
+      "PABS"
+    ],
+    "lat": 49.61725,
+    "lng": 0.73608
+  },
+  {
+    "nom": "GREEN RECYCLAGE",
+    "commune": "LE VAL D HAZEY",
+    "type_acteur": [
+      "Trieur",
+      "Broyeur",
+      "Négociant",
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PA",
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PS",
+      "PSE",
+      "PVC",
+      "PC",
+      "PABS"
+    ],
+    "lat": 49.17513,
+    "lng": 1.3521
+  },
+  {
+    "nom": "LR Plast",
+    "commune": "EPREVILLE",
+    "type_acteur": [
+      "Trieur",
+      "Broyeur",
+      "Négociant",
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PA",
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PS",
+      "PSE",
+      "PVC",
+      "PC",
+      "PABS"
+    ],
+    "lat": 49.71845,
+    "lng": 0.36164
+  },
+  {
+    "nom": "Gardet de Bezenac Environnement",
+    "commune": "GREMONVILLE",
+    "type_acteur": [
+      "Trieur",
+      "Recycleur",
+      "Négociant",
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD",
+      "PP"
+    ],
+    "lat": 49.64611,
+    "lng": 0.83208
+  },
+  {
+    "nom": "SARL PLAS-ECO",
+    "commune": "VERSON",
+    "type_acteur": [
+      "Autres"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PET"
+    ],
+    "lat": 49.15893,
+    "lng": -0.46295
+  },
+  {
+    "nom": "Sicalait",
+    "commune": "CARPIQUET",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEBD"
+    ],
+    "lat": 49.1899,
+    "lng": -0.43617
+  },
+  {
+    "nom": "PTL",
+    "commune": "OUVILLE LA RIVIERE",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD"
+    ],
+    "lat": 49.86725,
+    "lng": 0.95855
+  },
+  {
+    "nom": "POLYTRADE",
+    "commune": "ST AUBIN EPINAY",
+    "type_acteur": [
+      "Broyeur",
+      "Recycleur"
+    ],
+    "type_resine": [
+      "PA",
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PET",
+      "PS",
+      "PVC",
+      "PC",
+      "PABS"
+    ],
+    "lat": 49.42242,
+    "lng": 1.17646
+  },
+  {
+    "nom": "IPODEC Normandie",
+    "commune": "LE HAVRE",
+    "type_acteur": [
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PS"
+    ],
+    "lat": 49.49294,
+    "lng": 0.17716
+  },
+  {
+    "nom": "UNIFER environnement",
+    "commune": "LE HAVRE",
+    "type_acteur": [
+      "Négociant",
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD",
+      "PVC"
+    ],
+    "lat": 49.49831,
+    "lng": 0.19087
+  },
+  {
+    "nom": "RecyOuest",
+    "commune": "COLOMBELLES",
+    "type_acteur": [
+      "Trieur",
+      "Recycleur"
+    ],
+    "type_resine": [
+      "PEHD",
+      "PP"
+    ],
+    "lat": 49.188,
+    "lng": -0.30726
+  },
+  {
+    "nom": "NORDFILM",
+    "commune": "PONT AUDEMER",
+    "type_acteur": [
+      "Broyeur",
+      "Recycleur",
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEBD"
+    ],
+    "lat": 49.35671,
+    "lng": 0.51822
+  },
+  {
+    "nom": "United Caps messia",
+    "commune": "VALFRAMBERT",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD",
+      "PP"
+    ],
+    "lat": 48.48122,
+    "lng": 0.11079
+  },
+  {
+    "nom": "YMAPPE",
+    "commune": "PASSAIS VILLAGES",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PET"
+    ],
+    "lat": 48.52648,
+    "lng": -0.74283
+  },
+  {
+    "nom": "I.S.P.A ENTREPRISES",
+    "commune": "DAMIGNY",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PA",
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PS",
+      "PC",
+      "PABS"
+    ],
+    "lat": 48.44656,
+    "lng": 0.07338
+  },
+  {
+    "nom": "SYNDICAT MIXTE D ELIMINATION DES DECHETS DE L ARRONDISSEMENT DE ROUEN",
+    "commune": "ROUEN",
+    "type_acteur": [
+      "Trieur"
+    ],
+    "type_resine": [
+      "PEHD",
+      "PP",
+      "PET",
+      "PS"
+    ],
+    "lat": 49.44332,
+    "lng": 1.09826
+  },
+  {
+    "nom": "Sarl Marelle",
+    "commune": "ALVIMARE",
+    "type_acteur": [
+      "Collecteur"
+    ],
+    "type_resine": [],
+    "lat": 49.62157,
+    "lng": 0.6443
+  },
+  {
+    "nom": "Plexitech",
+    "commune": "ST ANDRE SUR ORNE",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PET"
+    ],
+    "lat": 49.12549,
+    "lng": -0.38613
+  },
+  {
+    "nom": "HOWA TRAMICO",
+    "commune": "BRIONNE",
+    "type_acteur": [
+      "Autres"
+    ],
+    "type_resine": [
+      "PEHD",
+      "PP",
+      "PET",
+      "PUR"
+    ],
+    "lat": 49.21,
+    "lng": 0.70994
+  },
+  {
+    "nom": "Camuset plastique",
+    "commune": "PORT JEROME SUR SEINE",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PEBD"
+    ],
+    "lat": 49.53015,
+    "lng": 0.61395
+  },
+  {
+    "nom": "Condi Ouest",
+    "commune": "MENILLES",
+    "type_acteur": [
+      "Plasturgiste"
+    ],
+    "type_resine": [
+      "PA",
+      "PEBD",
+      "PEHD",
+      "PP",
+      "PET",
+      "PS",
+      "PSE",
+      "PVC",
+      "PUR",
+      "PC",
+      "PABS"
+    ],
+    "lat": 49.03159,
+    "lng": 1.36204
+  },
+  {
+    "nom": "Environnement Cotentin Recyclage",
+    "commune": "ST SAUVEUR LENDELIN",
+    "type_acteur": [
+      "Trieur",
+      "Négociant",
+      "Collecteur"
+    ],
+    "type_resine": [
+      "PEBD",
+      "PEHD",
+      "PP"
+    ],
+    "lat": 49.13119,
+    "lng": -1.41514
+  },
+  {
+    "nom": "3D LUX",
+    "commune": "FOUQUEVILLE",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 49.21684,
+    "lng": 0.94832
+  },
+  {
+    "nom": "SOFAP Ingenierie",
+    "commune": "MARTAINVILLE EPREVILLE",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 49.46405,
+    "lng": 1.31492
+  },
+  {
+    "nom": "BAIE INDUSTRIE",
+    "commune": "AVRANCHES",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 48.68466,
+    "lng": -1.35433
+  },
+  {
+    "nom": "Plasteam",
+    "commune": "LE HAVRE",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 49.4902,
+    "lng": 0.15857
+  },
+  {
+    "nom": "Atelier Papier Carton",
+    "commune": "PAVILLY",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 49.56267,
+    "lng": 0.95539
+  },
+  {
+    "nom": "Noma composites SAS",
+    "commune": "MAUVES SUR HUISNE",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 48.44152,
+    "lng": 0.61273
+  },
+  {
+    "nom": "Societe Sacherie de la Charentonne",
+    "commune": "FONTAINE L ABBE",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 49.09268,
+    "lng": 0.68041
+  },
+  {
+    "nom": "Saint Andre Plastique",
+    "commune": "ST ANDRE DE L EPINE",
+    "type_acteur": [],
+    "type_resine": [],
+    "lat": 49.13968,
+    "lng": -1.01073
+  }
+]

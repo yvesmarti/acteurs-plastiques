@@ -44,6 +44,7 @@
       flex-shrink: 0;
       box-shadow: 0 2px 5px rgba(0,0,0,0.3);
       z-index: 3000;
+      gap: 16px;
     }
     #nav-title {
       font-family: 'Syne', sans-serif;
@@ -51,41 +52,35 @@
       font-weight: 800;
       color: #fff;
       margin-right: auto;
-    }
-    .nav-link {
-      color: rgba(255,255,255,0.7);
-      text-decoration: none;
-      font-size: 0.85rem;
-      padding: 4px 12px;
-      border-radius: 4px;
-      margin-right: 6px;
-      transition: color .2s;
-    }
-    .nav-link:hover, .nav-link.active { color: #fff; }
-    #btn-add {
-      background: var(--green);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 8px 18px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      margin-right: 12px;
-      transition: background .2s;
       white-space: nowrap;
     }
-    #btn-add:hover { background: var(--green-d); }
-    #user-menu {
-      color: var(--green);
+
+    /* View toggle */
+    #view-toggle {
+      display: flex;
+      gap: 2px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .view-btn {
       background: none;
       border: none;
-      font-size: 0.84rem;
+      color: rgba(255,255,255,0.65);
+      padding: 5px 13px;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 600;
       font-family: inherit;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      transition: background .15s, color .15s;
     }
+    .view-btn.active  { background: rgba(255,255,255,0.22); color: #fff; }
+    .view-btn:hover:not(.active) { color: #fff; }
 
     /* ── MAIN ── */
     #main { flex: 1; display: flex; overflow: hidden; }
@@ -265,27 +260,6 @@
     #map-container { flex: 1; position: relative; overflow: hidden; }
     #map { width: 100%; height: 100%; }
 
-    #list-btn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      z-index: 500;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 7px 14px;
-      font-size: .79rem;
-      font-family: inherit;
-      color: var(--text);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.12);
-      transition: box-shadow .2s;
-    }
-    #list-btn:hover { box-shadow: 0 3px 10px rgba(0,0,0,.2); }
-
     #expand-btn {
       display: none;
       position: absolute;
@@ -308,54 +282,134 @@
     }
     #expand-btn.visible { display: flex; }
 
-    /* ── LIST PANEL ── */
-    #list-panel {
+    /* ── BASEMAP CONTROL ── */
+    #basemap-ctrl {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 500;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.14);
+      overflow: hidden;
+    }
+    .basemap-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 13px;
+      font-size: .77rem;
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      color: var(--text);
+      transition: background .1s;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .basemap-opt:last-child { border-bottom: none; }
+    .basemap-opt:hover:not(.active) { background: #f5f5f5; }
+    .basemap-opt.active { background: #e8f0fd; color: var(--blue); font-weight: 600; }
+    .bm-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      flex-shrink: 0;
+    }
+    .basemap-opt.active .bm-dot { background: var(--blue); }
+
+    /* ── PANEL SHARED ── */
+    .view-panel {
       display: none;
       position: absolute;
       inset: 0;
-      background: #fff;
       z-index: 400;
       overflow-y: auto;
-      padding: 16px;
+      background: #f4f5f7;
     }
-    #list-panel.open { display: block; }
-    #list-panel-hdr {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 14px;
+    .view-panel.open { display: block; }
+
+    .panel-hdr {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      z-index: 10;
+      font-size: .82rem;
+      color: #666;
     }
-    #list-panel-hdr h2 { font-size: 1rem; font-weight: 600; color: var(--text); }
-    #close-list {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 5px 12px;
-      font-size: .8rem;
-      font-family: inherit;
-      cursor: pointer;
-      color: var(--muted);
+    .panel-hdr strong { color: var(--text); }
+
+    /* ── LIST (CARDS) PANEL ── */
+    #cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 12px;
+      padding: 14px 16px;
     }
-    #close-list:hover { border-color: var(--blue); color: var(--blue); }
-    #list-table {
+
+    .actor-card {
+      background: #fff;
+      border-radius: 10px;
+      border-left: 4px solid #ccc;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      padding: 13px 14px;
+      cursor: default;
+      transition: box-shadow .15s, transform .1s;
+    }
+    .actor-card:hover {
+      box-shadow: 0 4px 14px rgba(0,0,0,.13);
+      transform: translateY(-1px);
+    }
+    .card-nom   { font-weight: 600; font-size: .88rem; color: #1e293b; margin-bottom: 3px; }
+    .card-type  { font-size: .72rem; color: #64748b; margin-bottom: 7px; }
+    .card-info  { font-size: .74rem; color: #888; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+    .card-resines { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+    .card-res-badge {
+      font-size: .64rem;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: #f1f5f9;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    /* ── TABLE PANEL ── */
+    #table-panel { background: #fff; }
+    #data-table {
       width: 100%;
       border-collapse: collapse;
       font-size: .8rem;
     }
-    #list-table th {
+    #data-table th {
+      position: sticky;
+      top: 43px;
       background: #f5f5f5;
       text-align: left;
-      padding: 8px 10px;
+      padding: 9px 12px;
       border-bottom: 2px solid var(--border);
       font-weight: 600;
       color: #555;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
     }
-    #list-table td {
-      padding: 8px 10px;
+    #data-table th:hover { background: #ececec; }
+    #data-table th .sort-icon { margin-left: 4px; opacity: .4; font-size: .7rem; }
+    #data-table th.sort-asc  .sort-icon { opacity: 1; }
+    #data-table th.sort-desc .sort-icon { opacity: 1; }
+    #data-table td {
+      padding: 8px 12px;
       border-bottom: 1px solid var(--border);
       vertical-align: top;
     }
-    #list-table tr:hover td { background: #f9f9f9; }
+    #data-table tr:hover td { background: #fafafa; }
     .lt-dot {
       display: inline-block;
       width: 9px;
@@ -363,6 +417,7 @@
       border-radius: 50%;
       margin-right: 4px;
       vertical-align: middle;
+      flex-shrink: 0;
     }
 
     /* ── POPUP ── */
@@ -423,6 +478,7 @@
       #sidebar.open { transform: translateX(0); }
       #toggle-btn { display: flex; }
       #collapse-btn, #expand-btn { display: none !important; }
+      #view-toggle .view-btn span { display: none; }
     }
   </style>
 </head>
@@ -431,9 +487,30 @@
 <!-- ═══ NAVBAR ═══ -->
 <nav id="navbar">
   <div id="nav-title">Acteurs plastiques</div>
-  <a href="#" class="nav-link active">La carte</a>
-  <button id="btn-add">+ Ajouter un élément</button>
-  <button id="user-menu">A.FARCY ▾</button>
+
+  <div id="view-toggle">
+    <button class="view-btn active" data-view="carte">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
+        <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
+      </svg>
+      <span>Carte</span>
+    </button>
+    <button class="view-btn" data-view="liste">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+      </svg>
+      <span>Liste</span>
+    </button>
+    <button class="view-btn" data-view="tableau">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M3 3h18v18H3z"/><line x1="3" y1="9" x2="21" y2="9"/>
+        <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
+      <span>Tableau</span>
+    </button>
+  </div>
 </nav>
 
 <!-- ═══ MAIN ═══ -->
@@ -461,41 +538,49 @@
     </div>
   </aside>
 
-  <!-- MAP -->
+  <!-- MAP + PANELS -->
   <div id="map-container">
 
-    <button id="list-btn">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/>
-        <circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/>
-        <circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-        <circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/>
-      </svg>
-      Afficher sous forme de liste
-    </button>
+    <!-- Basemap switcher -->
+    <div id="basemap-ctrl">
+      <button class="basemap-opt active" data-bm="osm">
+        <span class="bm-dot"></span> OSM
+      </button>
+      <button class="basemap-opt" data-bm="carto">
+        <span class="bm-dot"></span> CartoDB Clair
+      </button>
+      <button class="basemap-opt" data-bm="satellite">
+        <span class="bm-dot"></span> Satellite
+      </button>
+    </div>
 
     <button id="expand-btn" title="Afficher le panneau">▶</button>
 
-    <!-- List panel (overlay on map) -->
-    <div id="list-panel">
-      <div id="list-panel-hdr">
-        <h2 id="list-title">Liste des acteurs</h2>
-        <button id="close-list">✕ Retour à la carte</button>
-      </div>
-      <table id="list-table">
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- List (cards) panel -->
+    <div id="list-panel" class="view-panel">
+      <div class="panel-hdr" id="list-hdr">Liste</div>
+      <div id="cards-grid"></div>
+    </div>
+
+    <!-- Table panel -->
+    <div id="table-panel" class="view-panel">
+      <div class="panel-hdr" id="table-hdr">Tableau</div>
+      <table id="data-table">
         <thead>
           <tr>
-            <th>Nom</th>
-            <th>Type d'acteur</th>
-            <th>Commune</th>
-            <th>Résines</th>
+            <th data-col="nom">Nom <span class="sort-icon">↕</span></th>
+            <th data-col="type_acteur">Type d'acteur <span class="sort-icon">↕</span></th>
+            <th data-col="commune">Commune <span class="sort-icon">↕</span></th>
+            <th data-col="type_resine">Résines <span class="sort-icon">↕</span></th>
           </tr>
         </thead>
-        <tbody id="list-body"></tbody>
+        <tbody id="table-body"></tbody>
       </table>
     </div>
 
-    <div id="map"></div>
   </div>
 </div>
 
@@ -530,19 +615,48 @@ const CONFIG = {
 ════════════════════════════════════════ */
 const map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
 
-L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> France',
-  maxZoom: 20
-}).addTo(map);
+const basemaps = {
+  osm: L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> France',
+    maxZoom: 20
+  }),
+  carto: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
+    maxZoom: 20
+  }),
+  satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics',
+    maxZoom: 18
+  })
+};
+
+let currentBasemap = 'osm';
+basemaps.osm.addTo(map);
 
 const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 60 });
 map.addLayer(clusterGroup);
+
+/* Basemap switcher */
+document.querySelectorAll('.basemap-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const bm = btn.dataset.bm;
+    if (bm === currentBasemap) return;
+    map.removeLayer(basemaps[currentBasemap]);
+    map.addLayer(basemaps[bm]);
+    currentBasemap = bm;
+    document.querySelectorAll('.basemap-opt').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
 
 /* ════════════════════════════════════════
    STATE & HELPERS
 ════════════════════════════════════════ */
 let allData = [];
 let activeFilters = {};
+let currentView = 'carte';
+let sortCol = null;
+let sortDir = 1;
 
 function acteurInfo(typeActeur) {
   const key = Array.isArray(typeActeur) ? typeActeur[0] : typeActeur;
@@ -550,11 +664,34 @@ function acteurInfo(typeActeur) {
 }
 
 /* ════════════════════════════════════════
-   MARKER ICONS  (pin shape + symbol)
+   VIEW TOGGLE
+════════════════════════════════════════ */
+const listPanel  = document.getElementById('list-panel');
+const tablePanel = document.getElementById('table-panel');
+
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const view = btn.dataset.view;
+    if (view === currentView) return;
+    currentView = view;
+
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    listPanel.classList.remove('open');
+    tablePanel.classList.remove('open');
+
+    if (view === 'liste')   { listPanel.classList.add('open');  renderCards(); }
+    if (view === 'tableau') { tablePanel.classList.add('open'); renderTable(); }
+    if (view === 'carte')   { setTimeout(() => map.invalidateSize(), 50); }
+  });
+});
+
+/* ════════════════════════════════════════
+   MARKER ICONS
 ════════════════════════════════════════ */
 function makeIcon(typeActeur) {
   const { color, symbol } = acteurInfo(typeActeur);
-  const safeSymbol = symbol.codePointAt(0) > 0xFFFF ? symbol : symbol;
   return L.divIcon({
     className: '',
     html: `<div style="position:relative;width:28px;height:38px;">
@@ -564,7 +701,7 @@ function makeIcon(typeActeur) {
         <circle cx="14" cy="13" r="7" fill="rgba(255,255,255,0.22)"/>
       </svg>
       <div style="position:absolute;top:4px;left:0;width:28px;text-align:center;
-                  color:#fff;font-size:12px;line-height:1;font-family:sans-serif;">${safeSymbol}</div>
+                  color:#fff;font-size:12px;line-height:1;font-family:sans-serif;">${symbol}</div>
     </div>`,
     iconSize:    [28, 38],
     iconAnchor:  [14, 38],
@@ -630,7 +767,6 @@ function buildFilters() {
     const section = document.createElement('div');
     section.className = 'filter-section';
 
-    // Section header
     const hdr = document.createElement('div');
     hdr.className = 'section-hdr';
     const masterCb = document.createElement('input');
@@ -666,7 +802,7 @@ function buildFilters() {
         if (cb.checked) activeFilters[key].add(val);
         else            activeFilters[key].delete(val);
         syncMasterCb(key);
-        updateMap();
+        updateView();
       });
 
       const badge = document.createElement('span');
@@ -703,7 +839,7 @@ function buildFilters() {
         c.checked = checked;
         c.indeterminate = false;
       });
-      updateMap();
+      updateView();
     });
   });
 }
@@ -711,11 +847,11 @@ function buildFilters() {
 function syncMasterCb(key) {
   const master = document.getElementById(`master-${key}`);
   if (!master) return;
-  const all     = [...document.querySelectorAll(`.filter-cb[data-key="${key}"]`)];
+  const all      = [...document.querySelectorAll(`.filter-cb[data-key="${key}"]`)];
   const nChecked = all.filter(c => c.checked).length;
-  if (nChecked === 0)          { master.checked = false; master.indeterminate = false; }
+  if (nChecked === 0)             { master.checked = false; master.indeterminate = false; }
   else if (nChecked === all.length) { master.checked = true;  master.indeterminate = false; }
-  else                          { master.checked = false; master.indeterminate = true; }
+  else                             { master.checked = false; master.indeterminate = true; }
 }
 
 function soloFilter(key, val) {
@@ -724,7 +860,7 @@ function soloFilter(key, val) {
     c.checked = c.dataset.val === val;
   });
   syncMasterCb(key);
-  updateMap();
+  updateView();
 }
 
 /* ════════════════════════════════════════
@@ -741,10 +877,10 @@ document.getElementById('reset-btn').addEventListener('click', () => {
     if (m) { m.checked = true; m.indeterminate = false; }
   });
   document.getElementById('search-input').value = '';
-  updateMap();
+  updateView();
 });
 
-document.getElementById('search-input').addEventListener('input', updateMap);
+document.getElementById('search-input').addEventListener('input', updateView);
 
 /* ════════════════════════════════════════
    GEOLOCATION
@@ -759,7 +895,7 @@ document.getElementById('geo-btn').addEventListener('click', () => {
 /* ════════════════════════════════════════
    SIDEBAR COLLAPSE
 ════════════════════════════════════════ */
-const sidebar    = document.getElementById('sidebar');
+const sidebar     = document.getElementById('sidebar');
 const collapseBtn = document.getElementById('collapse-btn');
 const expandBtn   = document.getElementById('expand-btn');
 
@@ -775,44 +911,7 @@ expandBtn.addEventListener('click', () => {
 });
 
 /* ════════════════════════════════════════
-   LIST VIEW
-════════════════════════════════════════ */
-const listPanel = document.getElementById('list-panel');
-const listBtn   = document.getElementById('list-btn');
-
-listBtn.addEventListener('click', () => {
-  listPanel.classList.add('open');
-  listBtn.style.display = 'none';
-  renderList();
-});
-document.getElementById('close-list').addEventListener('click', () => {
-  listPanel.classList.remove('open');
-  listBtn.style.display = '';
-});
-
-function renderList() {
-  const filtered = getFiltered();
-  document.getElementById('list-title').textContent = `Liste des acteurs (${filtered.length})`;
-  const tbody = document.getElementById('list-body');
-  tbody.innerHTML = '';
-  filtered.forEach(a => {
-    const types = Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur || ''];
-    const typesHtml = types.map(t => {
-      const { color } = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
-      return `<span class="lt-dot" style="background:${color}"></span>${t}`;
-    }).join(', ');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${a.nom}</strong></td>
-      <td>${typesHtml}</td>
-      <td>${a.commune || a.adresse || '—'}</td>
-      <td>${(a.type_resine || []).join(', ') || '—'}</td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-/* ════════════════════════════════════════
-   MAP UPDATE
+   FILTER
 ════════════════════════════════════════ */
 function getFiltered() {
   const q = document.getElementById('search-input').value.toLowerCase();
@@ -835,19 +934,121 @@ function getFiltered() {
   });
 }
 
-function updateMap() {
+/* ════════════════════════════════════════
+   RENDER: MAP
+════════════════════════════════════════ */
+function renderMap(filtered) {
   clusterGroup.clearLayers();
-  const filtered = getFiltered();
   filtered.forEach(a => {
     if (a.lat == null || a.lng == null) return;
     const marker = L.marker([a.lat, a.lng], { icon: makeIcon(a.type_acteur) });
     marker.bindPopup(buildPopup(a), { className: 'custom-popup', maxWidth: 280 });
     clusterGroup.addLayer(marker);
   });
+}
+
+/* ════════════════════════════════════════
+   RENDER: CARDS
+════════════════════════════════════════ */
+function renderCards() {
+  const filtered = getFiltered();
+  document.getElementById('list-hdr').innerHTML =
+    `<strong>${filtered.length}</strong> acteur${filtered.length > 1 ? 's' : ''}`;
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  filtered.forEach(a => {
+    const { color } = acteurInfo(a.type_acteur);
+    const types = Array.isArray(a.type_acteur) ? a.type_acteur.join(', ') : (a.type_acteur || '—');
+    const card = document.createElement('div');
+    card.className = 'actor-card';
+    card.style.borderLeftColor = color;
+    card.innerHTML = `
+      <div class="card-nom">${a.nom}</div>
+      <div class="card-type">${types}</div>
+      ${a.commune ? `<div class="card-info"><span>📍</span>${a.commune}${a.code_postal ? ' ' + a.code_postal : ''}</div>` : ''}
+      ${a.telephone ? `<div class="card-info"><span>📞</span>${a.telephone}</div>` : ''}
+      ${(a.type_resine || []).length ? `
+        <div class="card-resines">
+          ${(a.type_resine).map(r => `<span class="card-res-badge">${r}</span>`).join('')}
+        </div>` : ''}`;
+    grid.appendChild(card);
+  });
+}
+
+/* ════════════════════════════════════════
+   RENDER: TABLE (with sort)
+════════════════════════════════════════ */
+function renderTable() {
+  let filtered = getFiltered();
+  document.getElementById('table-hdr').innerHTML =
+    `<strong>${filtered.length}</strong> acteur${filtered.length > 1 ? 's' : ''}`;
+
+  if (sortCol) {
+    filtered = [...filtered].sort((a, b) => {
+      const va = colVal(a, sortCol);
+      const vb = colVal(b, sortCol);
+      return va.localeCompare(vb, 'fr', { sensitivity: 'base' }) * sortDir;
+    });
+  }
+
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  filtered.forEach(a => {
+    const types = Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur || ''];
+    const typesHtml = types.map(t => {
+      const { color } = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
+      return `<span class="lt-dot" style="background:${color}"></span>${t}`;
+    }).join(', ');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${a.nom}</strong></td>
+      <td>${typesHtml}</td>
+      <td>${a.commune || a.adresse || '—'}</td>
+      <td>${(a.type_resine || []).join(', ') || '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function colVal(a, col) {
+  if (col === 'nom')          return a.nom || '';
+  if (col === 'type_acteur')  return (Array.isArray(a.type_acteur) ? a.type_acteur[0] : a.type_acteur) || '';
+  if (col === 'commune')      return a.commune || a.adresse || '';
+  if (col === 'type_resine')  return (a.type_resine || []).join(',');
+  return '';
+}
+
+/* Table column sort */
+document.querySelectorAll('#data-table th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) {
+      sortDir *= -1;
+    } else {
+      sortCol = col;
+      sortDir = 1;
+    }
+    document.querySelectorAll('#data-table th').forEach(h => {
+      h.classList.remove('sort-asc', 'sort-desc');
+      h.querySelector('.sort-icon').textContent = '↕';
+    });
+    th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+    th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
+    renderTable();
+  });
+});
+
+/* ════════════════════════════════════════
+   UPDATE ALL VIEWS
+════════════════════════════════════════ */
+function updateView() {
+  const filtered = getFiltered();
   const n = filtered.length;
   document.getElementById('results-count').innerHTML =
     `<strong>${n}</strong> acteur${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${allData.length}`;
-  if (listPanel.classList.contains('open')) renderList();
+
+  renderMap(filtered);
+  if (currentView === 'liste')   renderCards();
+  if (currentView === 'tableau') renderTable();
 }
 
 /* ════════════════════════════════════════
@@ -858,7 +1059,7 @@ fetch(CONFIG.dataUrl)
   .then(data => {
     allData = data;
     buildFilters();
-    updateMap();
+    updateView();
   })
   .catch(err => {
     console.error('Erreur chargement JSON:', err);

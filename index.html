@@ -3,44 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Carte des Acteurs</title>
+  <title>Acteurs plastiques</title>
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- MarkerCluster -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
 
   <style>
-    /* =====================================================
-       VARIABLES & RESET
-    ===================================================== */
     :root {
-      --sidebar-w: 300px;
-      --navy:       #0f1d3a;
-      --navy-mid:   #162344;
-      --navy-light: #1a2f5a;
-      --blue:       #2563eb;
-      --blue-lt:    #3b82f6;
-      --accent:     #38bdf8;
-      --bg:         #f1f5f9;
-      --text:       #1e293b;
-      --muted:      #64748b;
-      --border:     #e2e8f0;
-      --white:      #ffffff;
-
-      /* Couleurs par type d'acteur — à adapter selon votre cas d'usage */
-      --c-collecteur:   #3b82f6;
-      --c-recycleur:    #10b981;
-      --c-valorisateur: #f59e0b;
-      --c-producteur:   #8b5cf6;
-      --c-distributeur: #ef4444;
+      --sidebar-w: 230px;
+      --navbar-h:  50px;
+      --green:     #4caf50;
+      --green-d:   #388e3c;
+      --blue:      #1976d2;
+      --text:      #333;
+      --muted:     #777;
+      --border:    #e0e0e0;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,403 +29,567 @@
     body {
       font-family: 'DM Sans', sans-serif;
       display: flex;
+      flex-direction: column;
       height: 100vh;
       overflow: hidden;
-      background: var(--bg);
     }
 
-    /* =====================================================
-       SIDEBAR
-    ===================================================== */
+    /* ── NAVBAR ── */
+    #navbar {
+      height: var(--navbar-h);
+      background: #1e2d4d;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      z-index: 3000;
+    }
+    #nav-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fff;
+      margin-right: auto;
+    }
+    .nav-link {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 4px 12px;
+      border-radius: 4px;
+      margin-right: 6px;
+      transition: color .2s;
+    }
+    .nav-link:hover, .nav-link.active { color: #fff; }
+    #btn-add {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 18px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      margin-right: 12px;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    #btn-add:hover { background: var(--green-d); }
+    #user-menu {
+      color: var(--green);
+      background: none;
+      border: none;
+      font-size: 0.84rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* ── MAIN ── */
+    #main { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── SIDEBAR ── */
     #sidebar {
       width: var(--sidebar-w);
       min-width: var(--sidebar-w);
-      height: 100vh;
-      background: var(--navy);
+      height: 100%;
+      background: #fff;
+      border-right: 1px solid var(--border);
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      transition: width .3s, min-width .3s;
       position: relative;
       z-index: 1000;
-      transition: transform 0.3s ease;
     }
+    #sidebar.collapsed { width: 0; min-width: 0; }
 
-    /* En-tête */
-    #sidebar-header {
-      padding: 18px 18px 14px;
-      background: var(--navy-light);
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+    /* Search */
+    #search-wrap {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
-    }
-    #sidebar-header h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: 1rem;
-      font-weight: 800;
-      color: var(--white);
-      line-height: 1.25;
-      margin-bottom: 3px;
-    }
-    #sidebar-header p {
-      font-size: 0.72rem;
-      color: rgba(255,255,255,0.45);
-    }
-
-    /* Recherche */
-    #search-box {
-      padding: 12px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
-      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
     #search-input {
-      width: 100%;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 7px;
-      padding: 7px 11px;
-      color: var(--white);
-      font-family: inherit;
-      font-size: 0.82rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    #search-input::placeholder { color: rgba(255,255,255,0.3); }
-    #search-input:focus        { border-color: var(--accent); }
-
-    /* Zone de filtres scrollable */
-    #filters {
       flex: 1;
-      overflow-y: auto;
-      padding: 8px 0;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(255,255,255,0.12) transparent;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      outline: none;
+      background: #f8f8f8;
+      color: var(--text);
+      transition: border-color .2s;
+      min-width: 0;
     }
-
-    .filter-section {
-      padding: 10px 14px;
-      border-bottom: 1px solid rgba(255,255,255,0.05);
+    #search-input:focus { border-color: var(--blue); background: #fff; }
+    #search-input::placeholder { color: #aaa; }
+    #geo-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--blue);
+      padding: 3px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
     }
+    #collapse-btn {
+      background: #fff;
+      border: 1px solid var(--border);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.58rem;
+      color: #999;
+      flex-shrink: 0;
+      transition: border-color .2s, color .2s;
+    }
+    #collapse-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-    .filter-title {
+    /* Filters */
+    #filters { flex: 1; overflow-y: auto; scrollbar-width: thin; }
+
+    .filter-section { border-bottom: 1px solid var(--border); }
+
+    .section-hdr {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 9px;
+      padding: 7px 12px;
+      background: #f7f7f7;
+      border-bottom: 1px solid var(--border);
     }
-    .filter-title span {
-      font-size: 0.67rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.09em;
-      color: rgba(255,255,255,0.38);
-    }
-    .filter-title button {
+    .section-hdr-title {
       font-size: 0.63rem;
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.28);
-      cursor: pointer;
-      font-family: inherit;
-      padding: 0;
-      transition: color 0.15s;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: #555;
     }
-    .filter-title button:hover { color: var(--accent); }
+    .master-cb {
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      accent-color: var(--green);
+    }
 
-    .filter-options {
+    .filter-row {
       display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    /* Chips de filtre */
-    .filter-chip {
-      display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 4px 9px;
-      border-radius: 20px;
-      border: 1.5px solid transparent;
-      background: rgba(255,255,255,0.05);
+      padding: 5px 12px;
+      gap: 7px;
+      transition: background .1s;
+    }
+    .filter-row:hover { background: #f5f5f5; }
+
+    .filter-cb {
+      width: 14px;
+      height: 14px;
       cursor: pointer;
-      font-family: inherit;
-      font-size: 0.76rem;
-      color: rgba(255,255,255,0.45);
-      transition: all 0.14s;
-      user-select: none;
+      accent-color: var(--green);
+      flex-shrink: 0;
     }
-    .filter-chip:hover {
-      background: rgba(255,255,255,0.1);
-      color: var(--white);
+    .type-badge {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      flex-shrink: 0;
     }
-    .filter-chip.active {
-      color: rgba(255,255,255,0.92);
-      font-weight: 500;
+    .filter-name {
+      flex: 1;
+      font-size: 0.79rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .chip-dot {
-      width: 7px;
-      height: 7px;
+    .filter-count {
+      font-size: 0.72rem;
+      color: #999;
+      flex-shrink: 0;
+      min-width: 16px;
+      text-align: right;
+    }
+    .solo-btn {
+      width: 15px;
+      height: 15px;
       border-radius: 50%;
+      border: 1.5px solid #ccc;
+      background: none;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+      transition: border-color .2s;
+    }
+    .solo-btn:hover { border-color: var(--blue); background: #e3f2fd; }
+
+    /* Footer */
+    #sidebar-foot {
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      background: #fafafa;
       flex-shrink: 0;
     }
-
-    /* Pied de sidebar */
-    #sidebar-footer {
-      padding: 10px 14px;
-      background: rgba(0,0,0,0.18);
-      border-top: 1px solid rgba(255,255,255,0.06);
-      flex-shrink: 0;
-    }
-    #results-count {
-      font-size: 0.76rem;
-      color: rgba(255,255,255,0.45);
-      margin-bottom: 7px;
-    }
-    #results-count strong { color: var(--accent); font-weight: 600; }
-
+    #results-count { font-size: .74rem; color: #666; margin-bottom: 6px; }
+    #results-count strong { color: var(--text); font-weight: 600; }
     #reset-btn {
       width: 100%;
       background: none;
-      border: 1px solid rgba(255,255,255,0.13);
+      border: 1px solid var(--border);
       border-radius: 6px;
-      color: rgba(255,255,255,0.38);
+      padding: 5px;
+      font-size: .72rem;
       font-family: inherit;
-      font-size: 0.73rem;
-      padding: 5px 10px;
+      color: #666;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all .2s;
     }
-    #reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+    #reset-btn:hover { border-color: var(--blue); color: var(--blue); }
 
-    /* =====================================================
-       MAP
-    ===================================================== */
-    #map {
-      flex: 1;
-      height: 100vh;
+    /* ── MAP AREA ── */
+    #map-container { flex: 1; position: relative; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
+
+    #list-btn {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 500;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-size: .79rem;
+      font-family: inherit;
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+      transition: box-shadow .2s;
+    }
+    #list-btn:hover { box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+
+    #expand-btn {
+      display: none;
+      position: absolute;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 600;
+      width: 20px;
+      height: 48px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-left: none;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      font-size: .6rem;
+      color: #999;
+      box-shadow: 2px 0 6px rgba(0,0,0,.1);
+    }
+    #expand-btn.visible { display: flex; }
+
+    /* ── LIST PANEL ── */
+    #list-panel {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: #fff;
+      z-index: 400;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    #list-panel.open { display: block; }
+    #list-panel-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    #list-panel-hdr h2 { font-size: 1rem; font-weight: 600; color: var(--text); }
+    #close-list {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: .8rem;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    #close-list:hover { border-color: var(--blue); color: var(--blue); }
+    #list-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    #list-table th {
+      background: #f5f5f5;
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 2px solid var(--border);
+      font-weight: 600;
+      color: #555;
+    }
+    #list-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    #list-table tr:hover td { background: #f9f9f9; }
+    .lt-dot {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
     }
 
-    /* =====================================================
-       POPUP PERSONNALISÉE
-    ===================================================== */
+    /* ── POPUP ── */
     .custom-popup .leaflet-popup-content-wrapper {
       border-radius: 10px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      box-shadow: 0 8px 32px rgba(0,0,0,.18);
       padding: 0;
       overflow: hidden;
     }
     .custom-popup .leaflet-popup-content { margin: 0; width: 260px !important; }
-    .custom-popup .leaflet-popup-tip     { background: var(--white); }
-
-    .pop-header {
-      padding: 11px 13px 9px;
-      border-left: 4px solid var(--pop-color, #3b82f6);
-    }
-    .pop-nom  { font-weight: 600; font-size: 0.92rem; color: var(--text); line-height: 1.3; }
-    .pop-type { font-size: 0.71rem; color: var(--muted); margin-top: 2px; }
-
-    .pop-body {
-      padding: 8px 13px 12px;
-      border-top: 1px solid var(--border);
-    }
-    .pop-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
-      margin-bottom: 5px;
-      font-size: 0.77rem;
-      color: var(--muted);
-      line-height: 1.4;
-    }
-    .pop-row .icon { flex-shrink: 0; }
-    .pop-resines {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-top: 8px;
-    }
+    .custom-popup .leaflet-popup-tip { background: #fff; }
+    .pop-header { padding: 11px 13px 9px; border-left: 4px solid var(--pop-color, #1976d2); }
+    .pop-nom { font-weight: 600; font-size: .92rem; color: #1e293b; }
+    .pop-type { font-size: .71rem; color: #64748b; margin-top: 2px; }
+    .pop-body { padding: 8px 13px 12px; border-top: 1px solid #e2e8f0; }
+    .pop-row { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; font-size: .77rem; color: #64748b; }
+    .pop-resines { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
     .res-badge {
-      font-size: 0.67rem;
+      font-size: .67rem;
       font-weight: 600;
       padding: 2px 7px;
       border-radius: 4px;
       background: #f1f5f9;
-      color: var(--muted);
+      color: #64748b;
       text-transform: uppercase;
-      letter-spacing: 0.04em;
     }
-    .pop-link {
-      display: inline-block;
-      margin-top: 8px;
-      font-size: 0.74rem;
-      color: var(--blue-lt);
-      text-decoration: none;
-      word-break: break-all;
-    }
+    .pop-link { display: inline-block; margin-top: 8px; font-size: .74rem; color: #1976d2; text-decoration: none; word-break: break-all; }
     .pop-link:hover { text-decoration: underline; }
 
-    /* =====================================================
-       BOUTON MOBILE (masquer sidebar)
-    ===================================================== */
+    /* ── MOBILE ── */
     #toggle-btn {
       display: none;
       position: fixed;
       bottom: 18px;
       left: 18px;
-      z-index: 2000;
-      background: var(--navy);
-      color: white;
+      z-index: 4000;
+      background: #1e2d4d;
+      color: #fff;
       border: none;
       border-radius: 50%;
       width: 46px;
       height: 46px;
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 16px rgba(0,0,0,.3);
       align-items: center;
       justify-content: center;
     }
-
     @media (max-width: 768px) {
       #sidebar {
         position: fixed;
-        left: 0; top: 0;
+        left: 0; top: var(--navbar-h);
+        height: calc(100vh - var(--navbar-h));
         transform: translateX(-100%);
+        width: var(--sidebar-w) !important;
+        min-width: var(--sidebar-w) !important;
       }
-      #sidebar.open  { transform: translateX(0); }
-      #toggle-btn    { display: flex; }
+      #sidebar.open { transform: translateX(0); }
+      #toggle-btn { display: flex; }
+      #collapse-btn, #expand-btn { display: none !important; }
     }
   </style>
 </head>
 <body>
 
-<!-- ========== SIDEBAR ========== -->
-<div id="sidebar">
+<!-- ═══ NAVBAR ═══ -->
+<nav id="navbar">
+  <div id="nav-title">Acteurs plastiques</div>
+  <a href="#" class="nav-link active">La carte</a>
+  <button id="btn-add">+ Ajouter un élément</button>
+  <button id="user-menu">A.FARCY ▾</button>
+</nav>
 
-  <div id="sidebar-header">
-    <h1>Acteurs Plastiques Normandie</h1>
-    <p id="data-info">Chargement…</p>
+<!-- ═══ MAIN ═══ -->
+<div id="main">
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+
+    <div id="search-wrap">
+      <input type="text" id="search-input" placeholder="Chercher">
+      <button id="geo-btn" title="Ma position">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+        </svg>
+      </button>
+      <button id="collapse-btn" title="Réduire le panneau">◀</button>
+    </div>
+
+    <div id="filters"><!-- généré dynamiquement --></div>
+
+    <div id="sidebar-foot">
+      <div id="results-count">…</div>
+      <button id="reset-btn">↺ Réinitialiser les filtres</button>
+    </div>
+  </aside>
+
+  <!-- MAP -->
+  <div id="map-container">
+
+    <button id="list-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/>
+        <circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+        <circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+      </svg>
+      Afficher sous forme de liste
+    </button>
+
+    <button id="expand-btn" title="Afficher le panneau">▶</button>
+
+    <!-- List panel (overlay on map) -->
+    <div id="list-panel">
+      <div id="list-panel-hdr">
+        <h2 id="list-title">Liste des acteurs</h2>
+        <button id="close-list">✕ Retour à la carte</button>
+      </div>
+      <table id="list-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Type d'acteur</th>
+            <th>Commune</th>
+            <th>Résines</th>
+          </tr>
+        </thead>
+        <tbody id="list-body"></tbody>
+      </table>
+    </div>
+
+    <div id="map"></div>
   </div>
-
-  <div id="search-box">
-    <input type="text" id="search-input" placeholder="🔍 Nom, commune, description…">
-  </div>
-
-  <div id="filters">
-    <!-- généré dynamiquement par JS -->
-  </div>
-
-  <div id="sidebar-footer">
-    <div id="results-count">…</div>
-    <button id="reset-btn">↺ Réinitialiser les filtres</button>
-  </div>
-
 </div>
 
-<!-- ========== CARTE ========== -->
-<div id="map"></div>
-
-<!-- Bouton pour afficher/masquer la sidebar sur mobile -->
 <button id="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
 
-
 <script>
-/* ======================================================
-   CONFIGURATION — adaptez selon votre projet
-====================================================== */
+/* ════════════════════════════════════════
+   CONFIG
+════════════════════════════════════════ */
 const CONFIG = {
-
-  // Chemin vers le fichier JSON (relatif à index.html)
   dataUrl: 'data/acteurs.json',
-
-  // Centre et zoom initial de la carte
   mapCenter: [49.1, 0.3],
   mapZoom: 8,
-
-  // Définition des filtres affichés dans la sidebar.
-  //   key      → nom du champ dans le JSON
-  //   label    → titre affiché dans la sidebar
-  //   isArray  → true si le champ JSON est un tableau
   filterFields: [
-    { key: 'type_acteur', label: "Type d'acteur",  isArray: true },
-    { key: 'type_resine', label: 'Type de résine', isArray: true }
+    { key: 'type_acteur', label: "TYPE D'ACTEUR",           isArray: true },
+    { key: 'type_resine', label: 'TYPE DE RÉSINE GÉRÉE(S)', isArray: true }
   ],
-
-  // Couleurs des marqueurs par type d'acteur (couleur du 1er type de la liste)
-  acteurColors: {
-    'Trieur':       '#f59e0b',
-    'Broyeur':      '#ef4444',
-    'Recycleur':    '#10b981',
-    'Négociant':    '#eab308',
-    'Plasturgiste': '#3b82f6',
-    'Autres':       '#94a3b8',
-    'Collecteur':   '#8b5cf6',
-    'default':      '#64748b'
+  acteurConfig: {
+    'Trieur':       { color: '#b45309', bg: '#fef3c7', symbol: '↕',  label: 'Trieur' },
+    'Broyeur':      { color: '#166534', bg: '#dcfce7', symbol: '⚙',  label: 'Broyeur' },
+    'Recycleur':    { color: '#15803d', bg: '#d1fae5', symbol: '♻',  label: 'Recycleur' },
+    'Négociant':    { color: '#92400e', bg: '#fef9c3', symbol: '€',  label: 'Négociant' },
+    'Plasturgiste': { color: '#1e40af', bg: '#dbeafe', symbol: '◆',  label: 'Plasturgiste' },
+    'Collecteur':   { color: '#155e75', bg: '#cffafe', symbol: '🚚', label: 'Collecteur' },
+    'Autres':       { color: '#4b5563', bg: '#f3f4f6', symbol: '●',  label: 'Autres' },
+    'default':      { color: '#4b5563', bg: '#f3f4f6', symbol: '●',  label: '?' }
   }
-
 };
 
-/* ======================================================
-   INITIALISATION DE LA CARTE LEAFLET
-====================================================== */
+/* ════════════════════════════════════════
+   MAP INIT
+════════════════════════════════════════ */
 const map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
 
-// Fond de carte OpenStreetMap (style clair)
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> © <a href="https://carto.com">CARTO</a>',
-  maxZoom: 19
+L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+  attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> France',
+  maxZoom: 20
 }).addTo(map);
 
-// Groupe de marqueurs avec clustering automatique
 const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 60 });
 map.addLayer(clusterGroup);
 
-/* ======================================================
-   DONNÉES & ÉTAT
-====================================================== */
-let allData     = [];
-let activeFilters = {};   // { "type_acteur": Set{"Collecteur","Recycleur"}, … }
+/* ════════════════════════════════════════
+   STATE & HELPERS
+════════════════════════════════════════ */
+let allData = [];
+let activeFilters = {};
 
-// Retourne la couleur hex pour un type d'acteur
-// type_acteur peut être un tableau (ex: ["Collecteur","Recycleur"]) → on prend le 1er
-function getColor(typeActeur) {
+function acteurInfo(typeActeur) {
   const key = Array.isArray(typeActeur) ? typeActeur[0] : typeActeur;
-  return CONFIG.acteurColors[key] || CONFIG.acteurColors['default'];
+  return CONFIG.acteurConfig[key] || CONFIG.acteurConfig['default'];
 }
 
-/* ======================================================
-   ICÔNE MARQUEUR SVG (pin coloré)
-====================================================== */
-function makeIcon(color) {
+/* ════════════════════════════════════════
+   MARKER ICONS  (pin shape + symbol)
+════════════════════════════════════════ */
+function makeIcon(typeActeur) {
+  const { color, symbol } = acteurInfo(typeActeur);
+  const safeSymbol = symbol.codePointAt(0) > 0xFFFF ? symbol : symbol;
   return L.divIcon({
     className: '',
-    html: `<svg width="26" height="34" viewBox="0 0 26 34" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13 0C5.82 0 0 5.82 0 13c0 8.67 13 21 13 21S26 21.67 26 13C26 5.82 20.18 0 13 0z"
-            fill="${color}" stroke="rgba(0,0,0,0.15)" stroke-width="1"/>
-      <circle cx="13" cy="13" r="5.5" fill="rgba(255,255,255,0.9)"/>
-    </svg>`,
-    iconSize:    [26, 34],
-    iconAnchor:  [13, 34],
-    popupAnchor: [0, -36]
+    html: `<div style="position:relative;width:28px;height:38px;">
+      <svg width="28" height="38" viewBox="0 0 28 38" xmlns="http://www.w3.org/2000/svg" style="position:absolute;top:0;left:0;">
+        <path d="M14 0C6.27 0 0 6.27 0 14c0 9.9 14 24 14 24S28 23.9 28 14C28 6.27 21.73 0 14 0z"
+              fill="${color}" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+        <circle cx="14" cy="13" r="7" fill="rgba(255,255,255,0.22)"/>
+      </svg>
+      <div style="position:absolute;top:4px;left:0;width:28px;text-align:center;
+                  color:#fff;font-size:12px;line-height:1;font-family:sans-serif;">${safeSymbol}</div>
+    </div>`,
+    iconSize:    [28, 38],
+    iconAnchor:  [14, 38],
+    popupAnchor: [0, -40]
   });
 }
 
-/* ======================================================
-   CONTENU DU POPUP
-====================================================== */
+/* ════════════════════════════════════════
+   POPUP
+════════════════════════════════════════ */
 function buildPopup(a) {
-  const color  = getColor(a.type_acteur);
-  const badges = (a.type_resine || []).map(r =>
-    `<span class="res-badge">${r}</span>`).join('');
+  const { color } = acteurInfo(a.type_acteur);
+  const badges = (a.type_resine || []).map(r => `<span class="res-badge">${r}</span>`).join('');
 
   let rows = '';
-  if (a.commune)    rows += `<div class="pop-row"><span class="icon">📍</span><span>${a.commune}${a.code_postal ? ' (' + a.code_postal + ')' : ''}</span></div>`;
-  if (a.telephone)  rows += `<div class="pop-row"><span class="icon">📞</span><span>${a.telephone}</span></div>`;
-  if (a.email)      rows += `<div class="pop-row"><span class="icon">✉️</span><a href="mailto:${a.email}">${a.email}</a></div>`;
-  if (a.description)rows += `<div class="pop-row"><span class="icon">ℹ️</span><span>${a.description}</span></div>`;
+  if (a.commune)     rows += `<div class="pop-row"><span>📍</span><span>${a.commune}${a.code_postal ? ' ' + a.code_postal : ''}</span></div>`;
+  if (a.telephone)   rows += `<div class="pop-row"><span>📞</span><span>${a.telephone}</span></div>`;
+  if (a.email)       rows += `<div class="pop-row"><span>✉️</span><a href="mailto:${a.email}">${a.email}</a></div>`;
+  if (a.description) rows += `<div class="pop-row"><span>ℹ️</span><span>${a.description}</span></div>`;
 
+  const types = Array.isArray(a.type_acteur) ? a.type_acteur.join(', ') : (a.type_acteur || '');
   return `
     <div class="pop-header" style="--pop-color:${color}">
       <div class="pop-nom">${a.nom}</div>
-      <div class="pop-type">${Array.isArray(a.type_acteur) ? a.type_acteur.join(', ') : (a.type_acteur || '')}</div>
+      <div class="pop-type">${types}</div>
     </div>
     <div class="pop-body">
       ${rows}
@@ -453,11 +598,9 @@ function buildPopup(a) {
     </div>`;
 }
 
-/* ======================================================
-   FILTRES — construction dynamique
-====================================================== */
-
-// Récupère les valeurs uniques d'un champ (tableau ou scalaire)
+/* ════════════════════════════════════════
+   FILTERS — CHECKBOX-BASED
+════════════════════════════════════════ */
 function uniqueValues(field, isArray) {
   const s = new Set();
   allData.forEach(a => {
@@ -465,6 +608,13 @@ function uniqueValues(field, isArray) {
     else if (a[field]) s.add(a[field]);
   });
   return [...s].sort();
+}
+
+function countValue(field, val, isArray) {
+  return allData.filter(a => {
+    if (isArray && Array.isArray(a[field])) return a[field].includes(val);
+    return a[field] === val;
+  }).length;
 }
 
 function buildFilters() {
@@ -475,79 +625,120 @@ function buildFilters() {
     const vals = uniqueValues(key, isArray);
     if (!vals.length) return;
 
-    // Tout actif par défaut
     activeFilters[key] = new Set(vals);
 
     const section = document.createElement('div');
     section.className = 'filter-section';
 
-    // Titre + bouton "tout déselectionner"
-    const titleEl = document.createElement('div');
-    titleEl.className = 'filter-title';
-    titleEl.innerHTML = `
-      <span>${label}</span>
-      <button onclick="clearFilter('${key}')">tout déselectionner</button>`;
-    section.appendChild(titleEl);
+    // Section header
+    const hdr = document.createElement('div');
+    hdr.className = 'section-hdr';
+    const masterCb = document.createElement('input');
+    masterCb.type = 'checkbox';
+    masterCb.className = 'master-cb';
+    masterCb.checked = true;
+    masterCb.id = `master-${key}`;
+    hdr.innerHTML = `<span class="section-hdr-title">${label}</span>`;
+    hdr.appendChild(masterCb);
+    section.appendChild(hdr);
 
-    // Chips
-    const opts = document.createElement('div');
-    opts.className = 'filter-options';
+    const optsList = document.createElement('div');
+    optsList.className = 'filter-options';
 
     vals.forEach(val => {
-      const color = key === 'type_acteur' ? getColor(val) : '#38bdf8';
-      const chip  = document.createElement('button');
-      chip.className    = 'filter-chip active';
-      chip.dataset.key  = key;
-      chip.dataset.val  = val;
-      chip.innerHTML    = `<span class="chip-dot" style="background:${color}"></span>${val}`;
-      chip.style.borderColor = color;
-      chip.style.color       = 'rgba(255,255,255,0.9)';
+      const isActeur = key === 'type_acteur';
+      const info = isActeur ? (CONFIG.acteurConfig[val] || CONFIG.acteurConfig['default']) : null;
+      const badgeColor = isActeur ? info.color : '#0e7490';
+      const badgeBg    = isActeur ? info.bg    : '#cffafe';
+      const symbol     = isActeur ? info.symbol : '●';
+      const count      = countValue(key, val, isArray);
 
-      chip.addEventListener('click', () => toggleFilter(key, val, chip, color));
-      opts.appendChild(chip);
+      const row = document.createElement('div');
+      row.className = 'filter-row';
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'filter-cb';
+      cb.checked = true;
+      cb.dataset.key = key;
+      cb.dataset.val = val;
+      cb.addEventListener('change', () => {
+        if (cb.checked) activeFilters[key].add(val);
+        else            activeFilters[key].delete(val);
+        syncMasterCb(key);
+        updateMap();
+      });
+
+      const badge = document.createElement('span');
+      badge.className = 'type-badge';
+      badge.style.cssText = `background:${badgeBg};color:${badgeColor};`;
+      badge.textContent = symbol;
+
+      const name = document.createElement('span');
+      name.className = 'filter-name';
+      name.textContent = val;
+      name.title = val;
+
+      const countEl = document.createElement('span');
+      countEl.className = 'filter-count';
+      countEl.textContent = count;
+
+      const soloBtn = document.createElement('button');
+      soloBtn.className = 'solo-btn';
+      soloBtn.title = `Afficher uniquement "${val}"`;
+      soloBtn.addEventListener('click', e => { e.stopPropagation(); soloFilter(key, val); });
+
+      row.append(cb, badge, name, countEl, soloBtn);
+      optsList.appendChild(row);
     });
 
-    section.appendChild(opts);
+    section.appendChild(optsList);
     container.appendChild(section);
+
+    masterCb.addEventListener('change', () => {
+      const checked = masterCb.checked;
+      if (checked) activeFilters[key] = new Set(vals);
+      else          activeFilters[key].clear();
+      container.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(c => {
+        c.checked = checked;
+        c.indeterminate = false;
+      });
+      updateMap();
+    });
   });
 }
 
-function toggleFilter(key, val, chip, color) {
-  if (activeFilters[key].has(val)) {
-    activeFilters[key].delete(val);
-    chip.classList.remove('active');
-    chip.style.borderColor = 'transparent';
-    chip.style.color       = '';
-  } else {
-    activeFilters[key].add(val);
-    chip.classList.add('active');
-    chip.style.borderColor = color;
-    chip.style.color       = 'rgba(255,255,255,0.9)';
-  }
-  updateMap();
+function syncMasterCb(key) {
+  const master = document.getElementById(`master-${key}`);
+  if (!master) return;
+  const all     = [...document.querySelectorAll(`.filter-cb[data-key="${key}"]`)];
+  const nChecked = all.filter(c => c.checked).length;
+  if (nChecked === 0)          { master.checked = false; master.indeterminate = false; }
+  else if (nChecked === all.length) { master.checked = true;  master.indeterminate = false; }
+  else                          { master.checked = false; master.indeterminate = true; }
 }
 
-function clearFilter(key) {
-  activeFilters[key].clear();
-  document.querySelectorAll(`.filter-chip[data-key="${key}"]`).forEach(c => {
-    c.classList.remove('active');
-    c.style.borderColor = 'transparent';
-    c.style.color       = '';
+function soloFilter(key, val) {
+  activeFilters[key] = new Set([val]);
+  document.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(c => {
+    c.checked = c.dataset.val === val;
   });
+  syncMasterCb(key);
   updateMap();
 }
 
-// Réinitialiser tous les filtres
+/* ════════════════════════════════════════
+   RESET
+════════════════════════════════════════ */
 document.getElementById('reset-btn').addEventListener('click', () => {
   CONFIG.filterFields.forEach(({ key, isArray }) => {
     const vals = uniqueValues(key, isArray);
     activeFilters[key] = new Set(vals);
-    document.querySelectorAll(`.filter-chip[data-key="${key}"]`).forEach(c => {
-      const color = key === 'type_acteur' ? getColor(c.dataset.val) : '#38bdf8';
-      c.classList.add('active');
-      c.style.borderColor = color;
-      c.style.color       = 'rgba(255,255,255,0.9)';
+    document.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(c => {
+      c.checked = true; c.indeterminate = false;
     });
+    const m = document.getElementById(`master-${key}`);
+    if (m) { m.checked = true; m.indeterminate = false; }
   });
   document.getElementById('search-input').value = '';
   updateMap();
@@ -555,28 +746,87 @@ document.getElementById('reset-btn').addEventListener('click', () => {
 
 document.getElementById('search-input').addEventListener('input', updateMap);
 
-/* ======================================================
-   MISE À JOUR DE LA CARTE
-====================================================== */
+/* ════════════════════════════════════════
+   GEOLOCATION
+════════════════════════════════════════ */
+document.getElementById('geo-btn').addEventListener('click', () => {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(({ coords }) => {
+    map.setView([coords.latitude, coords.longitude], 12);
+  });
+});
+
+/* ════════════════════════════════════════
+   SIDEBAR COLLAPSE
+════════════════════════════════════════ */
+const sidebar    = document.getElementById('sidebar');
+const collapseBtn = document.getElementById('collapse-btn');
+const expandBtn   = document.getElementById('expand-btn');
+
+collapseBtn.addEventListener('click', () => {
+  sidebar.classList.add('collapsed');
+  expandBtn.classList.add('visible');
+  setTimeout(() => map.invalidateSize(), 320);
+});
+expandBtn.addEventListener('click', () => {
+  sidebar.classList.remove('collapsed');
+  expandBtn.classList.remove('visible');
+  setTimeout(() => map.invalidateSize(), 320);
+});
+
+/* ════════════════════════════════════════
+   LIST VIEW
+════════════════════════════════════════ */
+const listPanel = document.getElementById('list-panel');
+const listBtn   = document.getElementById('list-btn');
+
+listBtn.addEventListener('click', () => {
+  listPanel.classList.add('open');
+  listBtn.style.display = 'none';
+  renderList();
+});
+document.getElementById('close-list').addEventListener('click', () => {
+  listPanel.classList.remove('open');
+  listBtn.style.display = '';
+});
+
+function renderList() {
+  const filtered = getFiltered();
+  document.getElementById('list-title').textContent = `Liste des acteurs (${filtered.length})`;
+  const tbody = document.getElementById('list-body');
+  tbody.innerHTML = '';
+  filtered.forEach(a => {
+    const types = Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur || ''];
+    const typesHtml = types.map(t => {
+      const { color } = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
+      return `<span class="lt-dot" style="background:${color}"></span>${t}`;
+    }).join(', ');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${a.nom}</strong></td>
+      <td>${typesHtml}</td>
+      <td>${a.commune || a.adresse || '—'}</td>
+      <td>${(a.type_resine || []).join(', ') || '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ════════════════════════════════════════
+   MAP UPDATE
+════════════════════════════════════════ */
 function getFiltered() {
   const q = document.getElementById('search-input').value.toLowerCase();
-
   return allData.filter(a => {
-    // Recherche texte libre
     if (q) {
       const hay = [a.nom, a.commune, a.adresse, a.description]
         .filter(Boolean).join(' ').toLowerCase();
       if (!hay.includes(q)) return false;
     }
-
-    // Un filtre vide → rien affiché (comportement intentionnel)
     for (const { key, isArray } of CONFIG.filterFields) {
       const active = activeFilters[key];
       if (!active || active.size === 0) return false;
-
       if (isArray) {
-        const vals = a[key] || [];
-        if (!vals.some(v => active.has(v))) return false;
+        if (!(a[key] || []).some(v => active.has(v))) return false;
       } else {
         if (!active.has(a[key])) return false;
       }
@@ -588,39 +838,32 @@ function getFiltered() {
 function updateMap() {
   clusterGroup.clearLayers();
   const filtered = getFiltered();
-
   filtered.forEach(a => {
-    if (a.lat == null || a.lng == null) return;   // ignorer si pas de coords
-    const marker = L.marker([a.lat, a.lng], { icon: makeIcon(getColor(a.type_acteur)) });
+    if (a.lat == null || a.lng == null) return;
+    const marker = L.marker([a.lat, a.lng], { icon: makeIcon(a.type_acteur) });
     marker.bindPopup(buildPopup(a), { className: 'custom-popup', maxWidth: 280 });
     clusterGroup.addLayer(marker);
   });
-
   const n = filtered.length;
   document.getElementById('results-count').innerHTML =
     `<strong>${n}</strong> acteur${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${allData.length}`;
+  if (listPanel.classList.contains('open')) renderList();
 }
 
-/* ======================================================
-   CHARGEMENT DES DONNÉES
-====================================================== */
+/* ════════════════════════════════════════
+   DATA LOADING
+════════════════════════════════════════ */
 fetch(CONFIG.dataUrl)
-  .then(r => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.json();
-  })
+  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
   .then(data => {
     allData = data;
-    document.getElementById('data-info').textContent =
-      `${data.length} acteur${data.length > 1 ? 's' : ''} chargé${data.length > 1 ? 's' : ''}`;
     buildFilters();
     updateMap();
   })
   .catch(err => {
-    console.error('Erreur chargement JSON :', err);
-    document.getElementById('data-info').textContent = '⚠️ Erreur de chargement';
+    console.error('Erreur chargement JSON:', err);
     document.getElementById('results-count').innerHTML =
-      '<span style="color:#f87171">Impossible de charger data/acteurs.json — voir README</span>';
+      '<span style="color:#ef4444">Impossible de charger data/acteurs.json</span>';
   });
 </script>
 

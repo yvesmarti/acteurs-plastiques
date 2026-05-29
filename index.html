@@ -5,906 +5,450 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Acteurs plastiques</title>
 
+  <!-- Polices (avant la CSS) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+
+  <!-- Thème Atelier (après Leaflet) -->
+  <link rel="stylesheet" href="acteurs-atelier.css"/>
+
+  <!-- Icônes (dispo globalement via window.ICONS) -->
+  <script src="icons.js"></script>
 
   <style>
-    :root {
-      --sidebar-w: 230px;
-      --navbar-h:  50px;
-      --green:     #4caf50;
-      --green-d:   #388e3c;
-      --blue:      #1976d2;
-      --text:      #333;
-      --muted:     #777;
-      --border:    #e0e0e0;
-    }
+    /* ── Glue CSS : éléments non couverts par acteurs-atelier.css ── */
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Panneaux overlay (liste / tableau) */
+    .view-panel      { display: none; }
+    .view-panel.open { display: flex; }
 
-    body {
-      font-family: 'DM Sans', sans-serif;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
+    /* Colonne distance cachée par défaut, visible si filtre rayon actif */
+    .col-distance                { display: none; }
+    body.has-radius .col-distance { display: table-cell; }
 
-    /* ── NAVBAR ── */
-    #navbar {
-      height: var(--navbar-h);
-      background: #1e2d4d;
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      flex-shrink: 0;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      z-index: 3000;
-      gap: 16px;
-    }
-    #nav-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.05rem;
-      font-weight: 800;
-      color: #fff;
-      margin-right: auto;
-      white-space: nowrap;
-    }
-
-    /* View toggle */
-    #view-toggle {
-      display: flex;
-      gap: 2px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 8px;
-      padding: 3px;
-    }
-    .view-btn {
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.65);
-      padding: 5px 13px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-      transition: background .15s, color .15s;
-    }
-    .view-btn.active  { background: rgba(255,255,255,0.22); color: #fff; }
-    .view-btn:hover:not(.active) { color: #fff; }
-
-    /* ── MAIN ── */
-    #main { flex: 1; display: flex; overflow: hidden; }
-
-    /* ── SIDEBAR ── */
-    #sidebar {
-      width: var(--sidebar-w);
-      min-width: var(--sidebar-w);
-      height: 100%;
-      background: #fff;
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      transition: width .3s, min-width .3s;
-      position: relative;
-      z-index: 1000;
-    }
-    #sidebar.collapsed { width: 0; min-width: 0; }
-
-    /* Search */
-    #search-wrap {
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    #search-input {
-      flex: 1;
-      border: 1px solid #ccc;
-      border-radius: 20px;
-      padding: 6px 10px;
-      font-size: 0.8rem;
-      font-family: inherit;
-      outline: none;
-      background: #f8f8f8;
-      color: var(--text);
-      transition: border-color .2s;
-      min-width: 0;
-    }
-    #search-input:focus { border-color: var(--blue); background: #fff; }
-    #search-input::placeholder { color: #aaa; }
-    #geo-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      color: var(--blue);
-      padding: 3px;
-      display: flex;
-      align-items: center;
-      flex-shrink: 0;
-    }
-    #collapse-btn {
-      background: #fff;
-      border: 1px solid var(--border);
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.58rem;
-      color: #999;
-      flex-shrink: 0;
-      transition: border-color .2s, color .2s;
-    }
-    #collapse-btn:hover { border-color: var(--blue); color: var(--blue); }
-
-    /* Filters */
-    #filters { flex: 1; overflow-y: auto; scrollbar-width: thin; }
-
-    .filter-section { border-bottom: 1px solid var(--border); }
-
-    .section-hdr {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 7px 12px;
-      background: #f7f7f7;
-      border-bottom: 1px solid var(--border);
-    }
-    .section-hdr-title {
-      font-size: 0.63rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #555;
-    }
-    .master-cb {
-      width: 15px;
-      height: 15px;
-      cursor: pointer;
-      accent-color: var(--green);
-    }
-
-    .filter-row {
-      display: flex;
-      align-items: center;
-      padding: 7px 12px;
-      gap: 9px;
-      transition: background .1s;
-    }
-    .filter-row:hover { background: #f5f5f5; }
-
-    .filter-cb {
-      width: 14px;
-      height: 14px;
-      cursor: pointer;
-      accent-color: var(--green);
-      flex-shrink: 0;
-    }
-    .type-badge {
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      color: #fff;
-    }
-    .type-badge svg { width: 16px; height: 16px; }
-    .filter-name {
-      flex: 1;
-      font-size: 0.83rem;
-      color: var(--text);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .filter-count {
-      font-size: 0.72rem;
-      color: #999;
-      flex-shrink: 0;
-      min-width: 16px;
-      text-align: right;
-    }
-    .solo-btn {
-      width: 15px;
-      height: 15px;
-      border-radius: 50%;
-      border: 1.5px solid #ccc;
-      background: none;
-      cursor: pointer;
-      flex-shrink: 0;
-      padding: 0;
-      transition: border-color .2s;
-    }
-    .solo-btn:hover { border-color: var(--blue); background: #e3f2fd; }
-
-    /* Footer */
-    #sidebar-foot {
-      padding: 8px 12px;
-      border-top: 1px solid var(--border);
-      background: #fafafa;
-      flex-shrink: 0;
-    }
-    #results-count { font-size: .74rem; color: #666; margin-bottom: 6px; }
-    #results-count strong { color: var(--text); font-weight: 600; }
-    #reset-btn {
-      width: 100%;
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 5px;
-      font-size: .72rem;
-      font-family: inherit;
-      color: #666;
-      cursor: pointer;
-      transition: all .2s;
-    }
-    #reset-btn:hover { border-color: var(--blue); color: var(--blue); }
-
-    /* ── MAP AREA ── */
-    #map-container { flex: 1; position: relative; overflow: hidden; }
-    #map { width: 100%; height: 100%; }
-
-    #expand-btn {
-      display: none;
-      position: absolute;
-      left: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 600;
-      width: 20px;
-      height: 48px;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-left: none;
-      border-radius: 0 6px 6px 0;
-      cursor: pointer;
-      align-items: center;
-      justify-content: center;
-      font-size: .6rem;
-      color: #999;
-      box-shadow: 2px 0 6px rgba(0,0,0,.1);
-    }
-    #expand-btn.visible { display: flex; }
-
-    /* ── BASEMAP CONTROL ── */
-    #basemap-ctrl {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 500;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.14);
-      overflow: hidden;
-    }
-    .basemap-opt {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 7px 13px;
-      font-size: .77rem;
-      font-family: inherit;
-      cursor: pointer;
-      border: none;
-      background: none;
-      width: 100%;
-      color: var(--text);
-      transition: background .1s;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    .basemap-opt:last-child { border-bottom: none; }
-    .basemap-opt:hover:not(.active) { background: #f5f5f5; }
-    .basemap-opt.active { background: #e8f0fd; color: var(--blue); font-weight: 600; }
-    .bm-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      border: 2px solid currentColor;
-      flex-shrink: 0;
-    }
-    .basemap-opt.active .bm-dot { background: var(--blue); }
-
-    /* ── PANEL SHARED ── */
-    .view-panel {
-      display: none;
-      position: absolute;
-      inset: 0;
-      z-index: 400;
-      overflow-y: auto;
-      background: #f4f5f7;
-    }
-    .view-panel.open { display: block; }
-
-    .panel-hdr {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      border-bottom: 1px solid var(--border);
-      padding: 10px 16px;
-      z-index: 10;
-      font-size: .82rem;
-      color: #666;
-    }
-    .panel-hdr strong { color: var(--text); }
-
-    /* ── LIST (CARDS) PANEL ── */
-    #cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-      gap: 12px;
-      padding: 14px 16px;
-    }
-
-    .actor-card {
-      background: #fff;
-      border-radius: 10px;
-      border-left: 4px solid #ccc;
-      box-shadow: 0 1px 4px rgba(0,0,0,.07);
-      padding: 13px 14px;
-      cursor: default;
-      transition: box-shadow .15s, transform .1s;
-    }
-    .actor-card:hover {
-      box-shadow: 0 4px 14px rgba(0,0,0,.13);
-      transform: translateY(-1px);
-    }
-    .card-nom   { font-weight: 600; font-size: .88rem; color: #1e293b; margin-bottom: 3px; }
-    .card-type  { font-size: .72rem; color: #64748b; margin-bottom: 7px; }
-    .card-info  { font-size: .74rem; color: #888; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
-    .card-resines { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
-    .card-res-badge {
-      font-size: .64rem;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #f1f5f9;
-      color: #64748b;
-      text-transform: uppercase;
-    }
-
-    /* ── TABLE PANEL ── */
-    #table-panel { background: #fff; }
-    #data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: .8rem;
-    }
-    #data-table th {
-      position: sticky;
-      top: 43px;
-      background: #f5f5f5;
-      text-align: left;
-      padding: 9px 12px;
-      border-bottom: 2px solid var(--border);
-      font-weight: 600;
-      color: #555;
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-    }
-    #data-table th:hover { background: #ececec; }
-    #data-table th .sort-icon { margin-left: 4px; opacity: .4; font-size: .7rem; }
-    #data-table th.sort-asc  .sort-icon { opacity: 1; }
-    #data-table th.sort-desc .sort-icon { opacity: 1; }
-    #data-table td {
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
-    }
-    #data-table tr:hover td { background: #fafafa; }
-    .lt-dot {
-      display: inline-block;
-      width: 9px;
-      height: 9px;
-      border-radius: 50%;
-      margin-right: 4px;
-      vertical-align: middle;
-      flex-shrink: 0;
-    }
-
-    /* ── MULTI-CATEGORY MARKER ── */
-    .multi-marker { display: flex; flex-direction: column; align-items: center; }
-    .mm-row {
-      display: flex;
-      gap: 3px;
-      filter: drop-shadow(0 3px 5px rgba(0,0,0,.35));
-    }
-    .mm-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 2.5px solid #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      transition: transform .12s ease;
-    }
-    .mm-badge svg { width: 18px; height: 18px; }
-    .leaflet-marker-icon:hover .mm-badge { transform: translateY(-2px); }
-
-    .mm-name-tip.leaflet-tooltip {
-      background: var(--green);
-      color: #fff;
-      border: none;
-      border-radius: 14px;
-      padding: 4px 11px;
-      font-family: 'DM Sans', sans-serif;
-      font-size: .78rem;
-      font-weight: 600;
-      box-shadow: 0 3px 10px rgba(0,0,0,.25);
-      white-space: nowrap;
-    }
-    .mm-name-tip.leaflet-tooltip::before { display: none; }
-
-    /* ── LEGEND ── */
-    #legend {
-      position: absolute;
-      bottom: 22px;
-      left: 12px;
-      z-index: 500;
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,.14);
-      font-size: .76rem;
-      max-width: 220px;
-      overflow: hidden;
-    }
-    #legend-hdr {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 7px 11px;
-      cursor: pointer;
-      font-weight: 700;
-      font-size: .68rem;
-      text-transform: uppercase;
-      letter-spacing: .07em;
-      color: #555;
-      background: #f7f7f7;
-      user-select: none;
-    }
-    #legend-hdr:hover { background: #eee; }
-    #legend-body { padding: 8px 10px; display: grid; gap: 6px; }
-    #legend.collapsed #legend-body { display: none; }
-    #legend.collapsed #legend-chevron { transform: rotate(-90deg); }
-    .leg-row { display: flex; align-items: center; gap: 8px; }
-    .leg-badge {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      flex-shrink: 0;
-    }
-    .leg-badge svg { width: 13px; height: 13px; }
-    .leg-label { font-size: .76rem; color: var(--text); }
-
-    /* ── POPUP ── */
-    .custom-popup .leaflet-popup-content-wrapper {
-      border-radius: 10px;
-      box-shadow: 0 8px 32px rgba(0,0,0,.18);
-      padding: 0;
-      overflow: hidden;
-    }
-    .custom-popup .leaflet-popup-content { margin: 0; width: 260px !important; }
-    .custom-popup .leaflet-popup-tip { background: #fff; }
-    .pop-header { padding: 11px 13px 10px; border-left: 4px solid var(--pop-color, #1976d2); }
-    .pop-nom { font-weight: 600; font-size: .95rem; color: #1e293b; margin-bottom: 6px; }
-    .pop-types { display: flex; flex-wrap: wrap; gap: 6px; }
-    .pop-type-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 3px 9px 3px 4px;
-      border-radius: 20px;
-      font-size: .72rem;
-      font-weight: 600;
-      color: #fff;
-    }
-    .pop-type-chip .ptc-ico {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.25);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .pop-type-chip svg { width: 11px; height: 11px; }
-    .pop-body { padding: 8px 13px 12px; border-top: 1px solid #e2e8f0; }
-    .pop-row { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 5px; font-size: .77rem; color: #64748b; }
-    .pop-resines { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-    .res-badge {
-      font-size: .67rem;
-      font-weight: 600;
-      padding: 2px 7px;
-      border-radius: 4px;
-      background: #f1f5f9;
-      color: #64748b;
-      text-transform: uppercase;
-    }
-    .pop-link { display: inline-block; margin-top: 8px; font-size: .74rem; color: #1976d2; text-decoration: none; word-break: break-all; }
-    .pop-link:hover { text-decoration: underline; }
-
-    /* ── ACTIVE FILTER CHIPS (above map) ── */
+    /* Chips filtres actifs flottant sur la carte */
     #active-chips {
-      position: absolute;
-      top: 10px;
-      left: 12px;
-      right: 200px;
-      z-index: 500;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+      position: absolute; top: 12px; left: 12px; right: 260px;
+      z-index: 450; display: flex; flex-wrap: wrap; gap: 6px;
       pointer-events: none;
     }
     #active-chips:empty { display: none; }
     .filter-chip {
-      pointer-events: auto;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 6px 4px 10px;
-      background: rgba(255,255,255,.95);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      font-size: .73rem;
-      font-weight: 500;
-      color: var(--text);
-      box-shadow: 0 1px 4px rgba(0,0,0,.1);
-      max-width: 260px;
+      pointer-events: auto; display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 6px 4px 10px; background: var(--panel);
+      border: 1px solid var(--line); border-radius: var(--radius-pill);
+      font-family: var(--font-body); font-size: .78rem; font-weight: 500;
+      color: var(--ink-2); box-shadow: var(--shadow-sm); max-width: 260px;
     }
-    .filter-chip .chip-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .filter-chip .chip-label {
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .filter-chip .chip-dot  { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .filter-chip .chip-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .filter-chip .chip-x {
-      background: none;
-      border: none;
-      cursor: pointer;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #999;
-      font-size: .9rem;
-      line-height: 1;
-      padding: 0;
-      transition: background .12s, color .12s;
+      background: none; border: none; cursor: pointer;
+      width: 18px; height: 18px; border-radius: 50%; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-3); font-size: .9rem; transition: background .12s, color .12s;
     }
     .filter-chip .chip-x:hover { background: #fee2e2; color: #dc2626; }
-    .filter-chip.chip-search { background: #fff7ed; border-color: #fed7aa; }
-    .filter-chip.chip-radius { background: #eff6ff; border-color: #bfdbfe; }
 
-    /* ── PROXIMITY SECTION (sidebar) ── */
-    #proximity-section {
-      border-bottom: 1px solid var(--border);
-      padding: 10px 12px;
-      background: #fafbfc;
-      flex-shrink: 0;
-    }
-    .prox-hdr {
-      font-size: 0.63rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: #555;
-      margin-bottom: 6px;
-    }
-    .prox-row { display: flex; gap: 5px; align-items: center; margin-bottom: 6px; }
+    /* Input + boutons dans la section Proximité */
+    #prox-input-row { display: flex; gap: 6px; align-items: center; }
     #prox-input {
-      flex: 1;
-      border: 1px solid #ccc;
-      border-radius: 14px;
-      padding: 5px 9px;
-      font-size: 0.78rem;
-      font-family: inherit;
-      outline: none;
-      background: #fff;
-      min-width: 0;
+      flex: 1; border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 7px 10px; font-size: 13px; font-family: inherit;
+      background: var(--panel); color: var(--ink); outline: none; min-width: 0;
     }
-    #prox-input:focus { border-color: var(--blue); }
+    #prox-input:focus          { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+    #prox-input::placeholder   { color: var(--ink-3); }
     #prox-apply, #prox-clear {
-      background: none;
-      border: 1px solid var(--border);
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      cursor: pointer;
-      color: var(--blue);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      padding: 0;
-      font-size: .75rem;
+      width: 32px; height: 32px; border-radius: var(--radius);
+      border: 1px solid var(--line); background: var(--panel);
+      color: var(--ink-2); display: grid; place-items: center;
+      flex-shrink: 0; transition: all .14s;
     }
-    #prox-apply:hover { border-color: var(--blue); background: #e3f2fd; }
-    #prox-clear { color: #999; }
+    #prox-apply:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
     #prox-clear:hover { border-color: #dc2626; color: #dc2626; background: #fee2e2; }
-    .prox-radius-row { display: flex; align-items: center; gap: 8px; font-size: .73rem; color: #666; }
-    #prox-radius { flex: 1; accent-color: var(--blue); cursor: pointer; }
-    #prox-radius-val { font-weight: 600; color: var(--text); min-width: 38px; text-align: right; }
-    #prox-status { font-size: .68rem; color: #999; margin-top: 4px; min-height: 1em; }
+    #prox-status { font-size: .75rem; color: var(--ink-3); min-height: 1em; }
     #prox-status.error { color: #dc2626; }
-    #prox-status.ok { color: var(--green-d); }
+    #prox-status.ok    { color: var(--accent); }
 
-    /* ── CSV EXPORT BUTTON (table header) ── */
-    .panel-hdr { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    #csv-export-btn {
-      background: var(--green);
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 11px;
-      font-size: .74rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background .15s;
+    /* Bouton géolocalisation (dans .search) */
+    #geo-btn {
+      border: 0; background: transparent; color: var(--ink-3); padding: 4px;
+      border-radius: 6px; display: grid; place-items: center;
+      flex-shrink: 0; transition: color .14s;
     }
-    #csv-export-btn:hover { background: var(--green-d); }
+    #geo-btn:hover { color: var(--accent); }
 
-    /* Distance column visibility (toggled when radius filter is active) */
-    .col-distance { display: none; }
-    body.has-radius .col-distance { display: table-cell; }
-
-    /* ── MOBILE ── */
-    #toggle-btn {
-      display: none;
-      position: fixed;
-      bottom: 18px;
-      left: 18px;
-      z-index: 4000;
-      background: #1e2d4d;
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 46px;
-      height: 46px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0,0,0,.3);
-      align-items: center;
-      justify-content: center;
+    /* Clusters Leaflet */
+    .marker-cluster-small,
+    .marker-cluster-medium,
+    .marker-cluster-large {
+      background-color: color-mix(in srgb, var(--accent) 18%, transparent);
     }
-    @media (max-width: 768px) {
-      #sidebar {
-        position: fixed;
-        left: 0; top: var(--navbar-h);
-        height: calc(100vh - var(--navbar-h));
-        transform: translateX(-100%);
-        width: var(--sidebar-w) !important;
-        min-width: var(--sidebar-w) !important;
-      }
-      #sidebar.open { transform: translateX(0); }
-      #toggle-btn { display: flex; }
-      #collapse-btn, #expand-btn { display: none !important; }
-      #view-toggle .view-btn span { display: none; }
+    .marker-cluster-small div,
+    .marker-cluster-medium div,
+    .marker-cluster-large div {
+      background-color: var(--accent); color: var(--accent-ink);
+      font-family: var(--font-display); font-weight: 600; font-size: 12px;
+    }
+
+    /* Tooltip nom marqueur */
+    .leaflet-tooltip.mm-name-tip {
+      background: var(--panel); color: var(--ink);
+      border: 1px solid var(--line); border-radius: var(--radius-pill);
+      padding: 4px 11px; font-family: var(--font-body); font-size: .78rem;
+      font-weight: 600; box-shadow: var(--shadow); white-space: nowrap;
+    }
+    .leaflet-tooltip.mm-name-tip::before { display: none; }
+
+    /* Tri tableau */
+    #data-table th.sorted { color: var(--accent); }
+    #data-table th .sort-icon {
+      color: var(--ink-3); margin-left: 4px;
+      display: inline-flex; vertical-align: middle;
+    }
+    #data-table th .sort-icon svg { width: 13px; height: 13px; }
+
+    /* Bouton solo discret dans chaque tchip */
+    .tchip .solo-btn {
+      position: absolute; right: 44px; top: 50%; transform: translateY(-50%);
+      width: 18px; height: 18px; border-radius: 50%; padding: 0;
+      border: 1.5px solid var(--line-strong); background: var(--panel-2);
+      cursor: pointer; opacity: 0; transition: opacity .15s;
+      display: flex; align-items: center; justify-content: center;
+      font-size: .5rem; font-weight: 700; color: var(--ink-3);
+      font-family: var(--font-label); letter-spacing: 0;
+    }
+    .tchip:hover .solo-btn { opacity: 1; }
+    .tchip .solo-btn:hover  { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+    /* Responsive : chips plus haut sur mobile (sous .mobile-filter) */
+    @media (max-width: 860px) {
+      #active-chips { left: 12px; right: 12px; top: 60px; }
     }
   </style>
 </head>
-<body>
 
-<!-- ═══ NAVBAR ═══ -->
-<nav id="navbar">
-  <div id="nav-title">Acteurs plastiques</div>
+<body class="app">
 
-  <div id="view-toggle">
-    <button class="view-btn active" data-view="carte">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/>
-        <line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>
-      </svg>
-      <span>Carte</span>
+<!-- ═══ EN-TÊTE ═══ -->
+<header class="hdr">
+  <div class="brand">
+    <div class="brand-mark">
+      <span class="ic" data-icon="recycleur" data-size="19" data-sw="1.7"></span>
+    </div>
+    <div class="brand-txt">
+      <span class="t">Acteurs plastiques</span>
+      <span class="s">Cartographie de la filière de recyclage</span>
+    </div>
+  </div>
+
+  <div class="seg" id="view-toggle">
+    <button class="on" data-view="carte">
+      <span class="ic" data-icon="map" data-size="15"></span>
+      <span class="lbl">Carte</span>
     </button>
-    <button class="view-btn" data-view="liste">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-        <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-      </svg>
-      <span>Liste</span>
+    <button data-view="liste">
+      <span class="ic" data-icon="list" data-size="15"></span>
+      <span class="lbl">Liste</span>
     </button>
-    <button class="view-btn" data-view="tableau">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-        <path d="M3 3h18v18H3z"/><line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>
-      </svg>
-      <span>Tableau</span>
+    <button data-view="tableau">
+      <span class="ic" data-icon="table" data-size="15"></span>
+      <span class="lbl">Tableau</span>
     </button>
   </div>
-</nav>
 
-<!-- ═══ MAIN ═══ -->
-<div id="main">
+  <div class="hdr-spacer"></div>
+
+  <div class="hdr-stat">
+    <span class="n" id="hdr-count">—</span>
+    <span class="l" id="hdr-total"></span>
+  </div>
+</header>
+
+<!-- ═══ CORPS ═══ -->
+<div class="body">
 
   <!-- SIDEBAR -->
-  <aside id="sidebar">
+  <aside class="side" id="sidebar">
+    <div class="side-scroll">
 
-    <div id="search-wrap">
-      <input type="text" id="search-input" placeholder="Chercher">
-      <button id="geo-btn" title="Ma position">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
-        </svg>
-      </button>
-      <button id="collapse-btn" title="Réduire le panneau">◀</button>
-    </div>
-
-    <div id="filters"><!-- généré dynamiquement --></div>
-
-    <div id="proximity-section">
-      <div class="prox-hdr">PROXIMITÉ</div>
-      <div class="prox-row">
-        <input type="text" id="prox-input" list="commune-list" placeholder="Commune (ex : Caen)" autocomplete="off">
-        <button id="prox-apply" title="Appliquer">⚲</button>
-        <button id="prox-clear" title="Retirer le filtre" style="display:none;">×</button>
+      <!-- Titre + reset -->
+      <div class="side-top">
+        <div class="ttl">
+          <span class="ic" data-icon="sliders" data-size="17"></span>
+          <h2>Filtres</h2>
+        </div>
+        <button class="reset-btn" id="reset-btn">
+          <span class="ic" data-icon="reset" data-size="13"></span>
+          Réinitialiser
+        </button>
       </div>
-      <datalist id="commune-list"></datalist>
-      <div class="prox-radius-row">
-        <span>Rayon</span>
-        <input type="range" id="prox-radius" min="5" max="200" step="5" value="30">
-        <span id="prox-radius-val">30 km</span>
-      </div>
-      <div id="prox-status"></div>
-    </div>
 
-    <div id="sidebar-foot">
-      <div id="results-count">…</div>
-      <button id="reset-btn">↺ Réinitialiser les filtres</button>
-    </div>
+      <!-- Recherche -->
+      <div class="search" id="search-wrap">
+        <span class="ic" data-icon="search" data-size="17"></span>
+        <input type="text" id="search-input"
+               placeholder="Rechercher un acteur, une commune…"
+               autocomplete="off">
+        <button id="geo-btn" title="Centrer sur ma position">
+          <span class="ic" data-icon="crosshair" data-size="15"></span>
+        </button>
+        <button class="clr" id="search-clear" style="display:none" title="Effacer">
+          <span data-icon="close" data-size="14"></span>
+        </button>
+      </div>
+
+      <!-- Filtres type d'acteur (pastilles tchip) -->
+      <div class="fgroup">
+        <div class="fgroup-hd">
+          <span class="label-kicker">Type d'acteur</span>
+        </div>
+        <div class="types" id="type-filter-container"></div>
+      </div>
+
+      <!-- Filtres résines (pills rpill) -->
+      <div class="fgroup">
+        <div class="fgroup-hd">
+          <span class="label-kicker">Résines gérées</span>
+        </div>
+        <div class="resines" id="resine-filter-container"></div>
+      </div>
+
+      <!-- Proximité -->
+      <div class="prox" id="proximity-section">
+        <div class="prox-hd">
+          <div class="lt">
+            <span class="ic" data-icon="crosshair" data-size="16"></span>
+            <b>Proximité</b>
+          </div>
+          <button class="switch" id="prox-switch"
+                  title="Activer / désactiver le filtre de proximité"></button>
+        </div>
+        <div id="prox-input-row">
+          <input type="text" id="prox-input" list="commune-list"
+                 placeholder="Commune (ex : Caen)" autocomplete="off">
+          <button id="prox-apply" title="Appliquer le filtre">
+            <span class="ic" data-icon="search" data-size="15"></span>
+          </button>
+          <button id="prox-clear" title="Retirer le filtre" style="display:none">
+            <span class="ic" data-icon="close" data-size="14"></span>
+          </button>
+        </div>
+        <datalist id="commune-list"></datalist>
+        <div class="radius-wrap">
+          <div class="radius-top">
+            <span class="label-kicker">Rayon</span>
+            <span class="v">
+              <span id="prox-radius-val">30</span><small>km</small>
+            </span>
+          </div>
+          <input type="range" class="rng" id="prox-radius"
+                 min="5" max="200" step="5" value="30">
+        </div>
+        <div id="prox-status"></div>
+      </div>
+
+    </div><!-- /.side-scroll -->
   </aside>
 
-  <!-- MAP + PANELS -->
-  <div id="map-container">
+  <!-- Poignée collapse (sibling de aside → sélecteur CSS .side.collapsed ~ .side-handle) -->
+  <button class="side-handle" id="collapse-btn"
+          title="Réduire / étendre le panneau des filtres">
+    <span class="ic" data-icon="chevronLeft" data-size="16"></span>
+  </button>
 
-    <!-- Basemap switcher -->
-    <div id="basemap-ctrl">
-      <button class="basemap-opt active" data-bm="osm">
-        <span class="bm-dot"></span> OSM
-      </button>
-      <button class="basemap-opt" data-bm="carto">
-        <span class="bm-dot"></span> CartoDB Clair
-      </button>
-      <button class="basemap-opt" data-bm="satellite">
-        <span class="bm-dot"></span> Satellite
-      </button>
-    </div>
+  <!-- CONTENU -->
+  <div class="content" id="map-container">
 
-    <button id="expand-btn" title="Afficher le panneau">▶</button>
+    <!-- Carte Leaflet -->
+    <div id="map" class="map"></div>
 
-    <!-- Active filter chips (above map) -->
+    <!-- Chips filtres actifs -->
     <div id="active-chips"></div>
 
-    <!-- Legend -->
-    <div id="legend">
-      <div id="legend-hdr">
-        <span>Légende</span>
-        <span id="legend-chevron">▾</span>
+    <!-- Contrôles carte – haut droite -->
+    <div class="map-ctrl tr">
+      <div class="basemap" id="basemap-ctrl">
+        <button class="on" data-bm="osm">
+          <span class="ic" data-icon="map" data-size="14"></span>Plan
+        </button>
+        <button data-bm="carto">OSM</button>
+        <button data-bm="satellite">
+          <span class="ic" data-icon="layers" data-size="14"></span>Satellite
+        </button>
       </div>
-      <div id="legend-body"><!-- généré --></div>
-    </div>
-
-    <!-- Map -->
-    <div id="map"></div>
-
-    <!-- List (cards) panel -->
-    <div id="list-panel" class="view-panel">
-      <div class="panel-hdr" id="list-hdr">Liste</div>
-      <div id="cards-grid"></div>
-    </div>
-
-    <!-- Table panel -->
-    <div id="table-panel" class="view-panel">
-      <div class="panel-hdr" id="table-hdr">
-        <span id="table-count">Tableau</span>
-        <button id="csv-export-btn" title="Exporter les résultats filtrés en CSV">⤓ CSV</button>
+      <div class="zoomer">
+        <button id="zoom-in"  title="Zoom +">
+          <span class="ic" data-icon="plus"  data-size="16"></span>
+        </button>
+        <button id="zoom-out" title="Zoom −">
+          <span class="ic" data-icon="minus" data-size="16"></span>
+        </button>
       </div>
-      <table id="data-table">
-        <thead>
-          <tr>
-            <th data-col="nom">Nom <span class="sort-icon">↕</span></th>
-            <th data-col="type_acteur">Type d'acteur <span class="sort-icon">↕</span></th>
-            <th data-col="commune">Commune <span class="sort-icon">↕</span></th>
-            <th data-col="type_resine">Résines <span class="sort-icon">↕</span></th>
-            <th data-col="distance" class="col-distance">Distance <span class="sort-icon">↕</span></th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
     </div>
 
-  </div>
-</div>
+    <!-- Légende – bas gauche -->
+    <div class="map-ctrl br">
+      <div class="legend" id="legend">
+        <h5>Légende</h5>
+        <ul id="legend-body"></ul>
+      </div>
+    </div>
 
-<button id="toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+    <!-- Vue Liste -->
+    <div id="list-panel" class="view-panel overlay">
+      <div class="view-bar" id="list-hdr">
+        <span class="cnt" id="list-count"></span>
+      </div>
+      <div class="ov-scroll">
+        <div class="list" id="cards-grid"></div>
+      </div>
+    </div>
+
+    <!-- Vue Tableau -->
+    <div id="table-panel" class="view-panel overlay">
+      <div class="view-bar" id="table-hdr">
+        <span class="cnt" id="table-count"></span>
+        <button class="dl-btn" id="csv-export-btn"
+                title="Exporter les résultats filtrés en CSV">
+          <span class="ic" data-icon="download" data-size="14"></span>CSV
+        </button>
+      </div>
+      <div class="ov-scroll">
+        <div class="table-wrap">
+          <table class="tbl" id="data-table">
+            <thead>
+              <tr>
+                <th data-col="nom">
+                  Nom<span class="ic sort-icon" data-icon="sort" data-size="13"></span>
+                </th>
+                <th data-col="type_acteur">
+                  Type<span class="ic sort-icon" data-icon="sort" data-size="13"></span>
+                </th>
+                <th data-col="commune">
+                  Commune<span class="ic sort-icon" data-icon="sort" data-size="13"></span>
+                </th>
+                <th data-col="type_resine">
+                  Résines<span class="ic sort-icon" data-icon="sort" data-size="13"></span>
+                </th>
+                <th data-col="distance" class="col-distance">
+                  Distance<span class="ic sort-icon" data-icon="sort" data-size="13"></span>
+                </th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bouton mobile – ouvrir les filtres -->
+    <button class="mobile-filter" id="toggle-btn">
+      <span class="ic" data-icon="sliders" data-size="15"></span>Filtres
+    </button>
+
+  </div><!-- /.content -->
+
+  <!-- Voile semi-transparent (mobile, ferme la sidebar) -->
+  <div class="scrim" id="scrim" style="display:none"></div>
+
+</div><!-- /.body -->
+
+<!-- ═══ SCRIPTS ═══ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
 <script>
+/* ════════════════════════════════════════
+   ICÔNES — remplacement des [data-icon]
+════════════════════════════════════════ */
+function initIcons() {
+  document.querySelectorAll('[data-icon]').forEach(el => {
+    const name  = el.dataset.icon;
+    const size  = el.dataset.size || 18;
+    const sw    = el.dataset.sw   || 1.7;
+    const inner = window.ICONS[name] || '';
+    el.innerHTML = `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none"
+      stroke="currentColor" stroke-width="${sw}"
+      stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+  });
+}
+initIcons();
+
 /* ════════════════════════════════════════
    CONFIG
 ════════════════════════════════════════ */
 const CONFIG = {
-  dataUrl: 'data/acteurs.json',
+  dataUrl:   'data/acteurs.json',
   mapCenter: [49.1, 0.3],
-  mapZoom: 8,
+  mapZoom:   8,
   filterFields: [
-    { key: 'type_acteur', label: "TYPE D'ACTEUR",           isArray: true },
-    { key: 'type_resine', label: 'TYPE DE RÉSINE GÉRÉE(S)', isArray: true }
+    { key: 'type_acteur', label: "Type d'acteur",  isArray: true },
+    { key: 'type_resine', label: 'Résines gérées', isArray: true }
   ],
   acteurConfig: {
-    'Trieur':       { color: '#d97706', label: 'Trieur' },
-    'Broyeur':      { color: '#166534', label: 'Broyeur' },
-    'Recycleur':    { color: '#15803d', label: 'Recycleur' },
-    'Négociant':    { color: '#ca8a04', label: 'Négociant' },
-    'Plasturgiste': { color: '#1e40af', label: 'Plasturgiste' },
-    'Collecteur':   { color: '#0d9488', label: 'Collecteur' },
-    'Autres':       { color: '#6b7280', label: 'Autres' },
-    'default':      { color: '#6b7280', label: '?' }
+    'Broyeur':      { color: '#E07A1F', cssVar: '--t-broyeur',   label: 'Broyeur' },
+    'Recycleur':    { color: '#0E8C53', cssVar: '--t-recycleur', label: 'Recycleur' },
+    'Trieur':       { color: '#2563EB', cssVar: '--t-trieur',    label: 'Trieur' },
+    'Négociant':    { color: '#7C5CFC', cssVar: '--t-negociant', label: 'Négociant' },
+    'Plasturgiste': { color: '#1e40af', cssVar: null,            label: 'Plasturgiste' },
+    'Collecteur':   { color: '#0d9488', cssVar: null,            label: 'Collecteur' },
+    'Autres':       { color: '#6b7280', cssVar: null,            label: 'Autres' },
+    'default':      { color: '#6b7280', cssVar: null,            label: '?' }
   }
 };
 
-/* SVG inner paths (24x24 viewBox), drawn with stroke=currentColor */
-const ACTEUR_SVG = {
-  'Trieur':       '<path d="M7 4v14M7 18l-3-3M7 18l3-3M17 20V6M17 6l-3 3M17 6l3 3"/>',
-  'Broyeur':      '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
-  'Recycleur':    '<path d="M7 19H4a1 1 0 01-.86-1.51l3-5M12 4.5l2.5 4.3M9.6 12.7l-2.4-4.2 2.4-4.2M21.86 17.49l-3-5M16 21.5l-5-1.34M16.5 13.3l-2.4 4.2-4.85.01"/>',
-  'Négociant':    '<path d="M17 6.5C15.6 5 13.85 4.25 12 4.25c-4.28 0-7.75 3.47-7.75 7.75s3.47 7.75 7.75 7.75c1.85 0 3.6-.75 5-2.25M3 10h9M3 14h9"/>',
-  'Plasturgiste': '<path d="M12 3l8 5v8l-8 5-8-5V8l8-5z"/><path d="M12 3v18M4 8l16 8M20 8L4 16" stroke-opacity=".5"/>',
+/* Mapping type (clé capitalisée) → clé icons.js (minuscule, sans accent) */
+const TYPE_ICON_KEY = {
+  'Broyeur':   'broyeur',
+  'Recycleur': 'recycleur',
+  'Trieur':    'trieur',
+  'Négociant': 'negociant'
+};
+
+/* SVG de secours pour types hors icons.js */
+const ACTEUR_SVG_FALLBACK = {
+  'Plasturgiste': '<path d="M12 3l8 5v8l-8 5-8-5V8l8-5z"/>',
   'Collecteur':   '<path d="M1 16V5a1 1 0 011-1h12v12M14 9h4l3 3v4h-3M5.5 19a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM17.5 19a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"/>',
   'Autres':       '<circle cx="6" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="18" cy="12" r="1.5" fill="currentColor"/>'
 };
 
-function iconSvg(name, opts = {}) {
-  const inner = ACTEUR_SVG[name] || ACTEUR_SVG['Autres'];
-  const sw = opts.strokeWidth || 2;
-  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+function acteurSvgInner(type) {
+  const key = TYPE_ICON_KEY[type];
+  if (key && window.ICONS[key]) return window.ICONS[key];
+  return ACTEUR_SVG_FALLBACK[type] || ACTEUR_SVG_FALLBACK['Autres'];
 }
 
-/* Stable sort order for type_acteur badges */
+function iconFromAtelier(type, size = 18, sw = 2.2) {
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none"
+    stroke="currentColor" stroke-width="${sw}"
+    stroke-linecap="round" stroke-linejoin="round">${acteurSvgInner(type)}</svg>`;
+}
+
+function typeColor(type) {
+  const info = CONFIG.acteurConfig[type] || CONFIG.acteurConfig['default'];
+  return info.cssVar ? `var(${info.cssVar})` : info.color;
+}
+
 const ACTEUR_ORDER = ['Collecteur','Trieur','Broyeur','Recycleur','Plasturgiste','Négociant','Autres'];
 function sortTypes(types) {
-  return [...(types || [])].sort((a,b) => {
-    const ia = ACTEUR_ORDER.indexOf(a); const ib = ACTEUR_ORDER.indexOf(b);
-    return (ia<0?99:ia) - (ib<0?99:ib);
+  return [...(types || [])].sort((a, b) => {
+    const ia = ACTEUR_ORDER.indexOf(a), ib = ACTEUR_ORDER.indexOf(b);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
 }
 
 /* ════════════════════════════════════════
-   MAP INIT
+   CARTE
 ════════════════════════════════════════ */
-const map = L.map('map').setView(CONFIG.mapCenter, CONFIG.mapZoom);
+const map = L.map('map', { zoomControl: false }).setView(CONFIG.mapCenter, CONFIG.mapZoom);
 
 const basemaps = {
   osm: L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
@@ -916,11 +460,10 @@ const basemaps = {
     maxZoom: 20
   }),
   satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '© Esri, Maxar, GeoEye, Earthstar Geographics',
+    attribution: '© Esri, Maxar, GeoEye',
     maxZoom: 18
   })
 };
-
 let currentBasemap = 'osm';
 basemaps.osm.addTo(map);
 
@@ -928,70 +471,62 @@ const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 60 });
 map.addLayer(clusterGroup);
 
 /* Basemap switcher */
-document.querySelectorAll('.basemap-opt').forEach(btn => {
+document.querySelectorAll('#basemap-ctrl button').forEach(btn => {
   btn.addEventListener('click', () => {
     const bm = btn.dataset.bm;
     if (bm === currentBasemap) return;
     map.removeLayer(basemaps[currentBasemap]);
     map.addLayer(basemaps[bm]);
     currentBasemap = bm;
-    document.querySelectorAll('.basemap-opt').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
+    document.querySelectorAll('#basemap-ctrl button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
   });
 });
 
+/* Zoom custom */
+document.getElementById('zoom-in').addEventListener('click',  () => map.zoomIn());
+document.getElementById('zoom-out').addEventListener('click', () => map.zoomOut());
+
 /* ════════════════════════════════════════
-   STATE & HELPERS
+   ÉTAT
 ════════════════════════════════════════ */
-let allData = [];
-let activeFilters = {};
-let currentView = 'carte';
-let sortCol = null;
-let sortDir = 1;
-let radiusFilter = null;   // { commune, lat, lng, km } when active
-let radiusCircle = null;   // Leaflet circle layer
-let countEls = {};         // { 'type_acteur:Trieur': <span>, ... } for dynamic counters
+let allData         = [];
+let activeFilters   = {};
+let currentView     = 'carte';
+let sortCol         = null;
+let sortDir         = 1;
+let radiusFilter    = null;
+let radiusCircle    = null;
+let countEls        = {};
 let suppressUrlSync = false;
 
 function haversineKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
-  const toRad = d => d * Math.PI / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
+  const R = 6371, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLng = toRad(lng2 - lng1);
   const a = Math.sin(dLat / 2) ** 2 +
-            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-            Math.sin(dLng / 2) ** 2;
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(a));
 }
-
 function actorDistance(a) {
   if (!radiusFilter || a.lat == null || a.lng == null) return null;
   return haversineKm(radiusFilter.lat, radiusFilter.lng, a.lat, a.lng);
 }
 
-function acteurInfo(typeActeur) {
-  const key = Array.isArray(typeActeur) ? typeActeur[0] : typeActeur;
-  return CONFIG.acteurConfig[key] || CONFIG.acteurConfig['default'];
-}
-
 /* ════════════════════════════════════════
-   VIEW TOGGLE
+   SÉLECTEUR DE VUE
 ════════════════════════════════════════ */
 const listPanel  = document.getElementById('list-panel');
 const tablePanel = document.getElementById('table-panel');
 
-document.querySelectorAll('.view-btn').forEach(btn => {
+document.querySelectorAll('#view-toggle button').forEach(btn => {
   btn.addEventListener('click', () => {
     const view = btn.dataset.view;
     if (view === currentView) return;
     currentView = view;
-
-    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
+    document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
     listPanel.classList.remove('open');
     tablePanel.classList.remove('open');
-
     if (view === 'liste')   { listPanel.classList.add('open');  renderCards(); }
     if (view === 'tableau') { tablePanel.classList.add('open'); renderTable(); }
     if (view === 'carte')   { setTimeout(() => map.invalidateSize(), 50); }
@@ -1000,28 +535,23 @@ document.querySelectorAll('.view-btn').forEach(btn => {
 });
 
 /* ════════════════════════════════════════
-   MARKER ICONS — one badge per category
+   MARQUEURS — forme Galet (.mk-blob)
 ════════════════════════════════════════ */
-const BADGE = 32; // px
-const GAP   = 3;
+function markerHTML(typeActeur) {
+  const types    = sortTypes(Array.isArray(typeActeur) ? typeActeur : [typeActeur].filter(Boolean));
+  const mainType = types[0] || 'default';
+  const c        = typeColor(mainType);
+  const svg      = iconFromAtelier(mainType, 16, 2.2);
+  return `<div class="mk" style="--c:${c}"><div class="mk-blob"><span class="ic">${svg}</span></div></div>`;
+}
 
 function makeIcon(typeActeur) {
-  const types = sortTypes(Array.isArray(typeActeur) ? typeActeur : [typeActeur]);
-  const n = Math.max(types.length, 1);
-  const width = n * BADGE + (n - 1) * GAP;
-  const height = BADGE;
-
-  const badges = types.map(t => {
-    const info = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
-    return `<div class="mm-badge" style="background:${info.color}" title="${t}">${iconSvg(t)}</div>`;
-  }).join('');
-
   return L.divIcon({
-    className: '',
-    html: `<div class="multi-marker"><div class="mm-row">${badges}</div></div>`,
-    iconSize:    [width, height],
-    iconAnchor:  [width / 2, height / 2],
-    popupAnchor: [0, -height / 2 - 4]
+    className:   'mk-wrap',
+    html:        markerHTML(typeActeur),
+    iconSize:    [32, 32],
+    iconAnchor:  [16, 16],
+    popupAnchor: [0, -18]
   });
 }
 
@@ -1029,279 +559,173 @@ function makeIcon(typeActeur) {
    POPUP
 ════════════════════════════════════════ */
 function buildPopup(a) {
-  const { color } = acteurInfo(a.type_acteur);
-  const resBadges = (a.type_resine || []).map(r => `<span class="res-badge">${r}</span>`).join('');
-
-  let rows = '';
-  if (a.commune)     rows += `<div class="pop-row"><span>📍</span><span>${a.commune}${a.code_postal ? ' ' + a.code_postal : ''}</span></div>`;
-  if (a.telephone)   rows += `<div class="pop-row"><span>📞</span><span>${a.telephone}</span></div>`;
-  if (a.email)       rows += `<div class="pop-row"><span>✉️</span><a href="mailto:${a.email}">${a.email}</a></div>`;
-  if (a.description) rows += `<div class="pop-row"><span>ℹ️</span><span>${a.description}</span></div>`;
-
-  const types = sortTypes(Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur].filter(Boolean));
-  const typeChips = types.map(t => {
-    const info = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
-    return `<span class="pop-type-chip" style="background:${info.color}">
-      <span class="ptc-ico">${iconSvg(t, { strokeWidth: 2.4 })}</span>${t}
-    </span>`;
-  }).join('');
-
-  return `
-    <div class="pop-header" style="--pop-color:${color}">
-      <div class="pop-nom">${a.nom}</div>
-      <div class="pop-types">${typeChips}</div>
-    </div>
-    <div class="pop-body">
-      ${rows}
-      ${resBadges ? `<div class="pop-resines">${resBadges}</div>` : ''}
-      ${a.site_web ? `<a class="pop-link" href="${a.site_web}" target="_blank" rel="noopener">🔗 ${a.site_web}</a>` : ''}
-    </div>`;
+  const types    = sortTypes(Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur].filter(Boolean));
+  const mainType = types[0] || 'default';
+  const c        = typeColor(mainType);
+  const resBadges = (a.type_resine || []).map(r => `<span>${r}</span>`).join('');
+  const locParts  = [a.commune, a.code_postal].filter(Boolean).join(' ');
+  const pinSvg = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+    stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+    stroke-linejoin="round">${window.ICONS.pin}</svg>`;
+  const extSvg = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+    stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+    stroke-linejoin="round">${window.ICONS.external}</svg>`;
+  return `<div class="pop">
+    <span class="pop-type" style="background:${c}">${types.join(' · ')}</span>
+    <h4>${a.nom}</h4>
+    ${locParts ? `<div class="loc">${pinSvg}${locParts}</div>` : ''}
+    ${resBadges ? `<div class="res">${resBadges}</div>` : ''}
+    ${a.site_web ? `<div class="loc" style="margin-top:6px">
+      ${extSvg}<a href="${a.site_web}" target="_blank" rel="noopener"
+        style="color:var(--accent);text-decoration:none;font-size:11.5px;word-break:break-all">${a.site_web}</a>
+    </div>` : ''}
+  </div>`;
 }
 
 /* ════════════════════════════════════════
-   FILTERS — CHECKBOX-BASED
+   FILTRES — génération tchip + rpill
 ════════════════════════════════════════ */
-function uniqueValues(field, isArray) {
-  const s = new Set();
-  allData.forEach(a => {
-    if (isArray && Array.isArray(a[field])) a[field].forEach(v => s.add(v));
-    else if (a[field]) s.add(a[field]);
-  });
-  return [...s].sort();
-}
-
-function countValue(field, val, isArray) {
-  return allData.filter(a => {
-    if (isArray && Array.isArray(a[field])) return a[field].includes(val);
-    return a[field] === val;
-  }).length;
-}
-
 function buildFilters() {
-  const container = document.getElementById('filters');
-  container.innerHTML = '';
+  const typesEl   = document.getElementById('type-filter-container');
+  const resinesEl = document.getElementById('resine-filter-container');
+  typesEl.innerHTML = '';
+  resinesEl.innerHTML = '';
   countEls = {};
 
-  CONFIG.filterFields.forEach(({ key, label, isArray }) => {
-    const vals = uniqueValues(key, isArray);
-    if (!vals.length) return;
+  /* ── Types d'acteur → .tchip ── */
+  const typeVals = uniqueValues('type_acteur', true);
+  activeFilters['type_acteur'] = new Set(typeVals);
 
-    activeFilters[key] = new Set(vals);
+  const checkSvg = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+    stroke="currentColor" stroke-width="3"
+    stroke-linecap="round" stroke-linejoin="round">${window.ICONS.check}</svg>`;
 
-    const section = document.createElement('div');
-    section.className = 'filter-section';
+  typeVals.forEach(val => {
+    const info     = CONFIG.acteurConfig[val] || CONFIG.acteurConfig['default'];
+    const c        = info.cssVar ? `var(${info.cssVar})` : info.color;
+    const count    = countValue('type_acteur', val, true);
+    const iconHtml = iconFromAtelier(val, 18, 2);
 
-    const hdr = document.createElement('div');
-    hdr.className = 'section-hdr';
-    const masterCb = document.createElement('input');
-    masterCb.type = 'checkbox';
-    masterCb.className = 'master-cb';
-    masterCb.checked = true;
-    masterCb.id = `master-${key}`;
-    hdr.innerHTML = `<span class="section-hdr-title">${label}</span>`;
-    hdr.appendChild(masterCb);
-    section.appendChild(hdr);
+    const btn = document.createElement('button');
+    btn.className = 'tchip';
+    btn.dataset.key = 'type_acteur';
+    btn.dataset.val = val;
+    btn.style.setProperty('--c', c);
+    btn.innerHTML = `
+      <span class="dot">${iconHtml}</span>
+      <span class="tx">
+        <span class="nm">${val}</span>
+        <span class="ct">${count} acteur${count > 1 ? 's' : ''}</span>
+      </span>
+      <span class="tick">${checkSvg}</span>
+      <button class="solo-btn" tabindex="-1" title="Afficher uniquement « ${val} »">1</button>
+    `;
 
-    const optsList = document.createElement('div');
-    optsList.className = 'filter-options';
-
-    vals.forEach(val => {
-      const isActeur = key === 'type_acteur';
-      const info = isActeur ? (CONFIG.acteurConfig[val] || CONFIG.acteurConfig['default']) : null;
-      const badgeColor = isActeur ? info.color : '#0e7490';
-      const count      = countValue(key, val, isArray);
-
-      const row = document.createElement('div');
-      row.className = 'filter-row';
-
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.className = 'filter-cb';
-      cb.checked = true;
-      cb.dataset.key = key;
-      cb.dataset.val = val;
-      cb.addEventListener('change', () => {
-        if (cb.checked) activeFilters[key].add(val);
-        else            activeFilters[key].delete(val);
-        syncMasterCb(key);
-        updateView();
-      });
-
-      const badge = document.createElement('span');
-      badge.className = 'type-badge';
-      badge.style.background = badgeColor;
-      badge.innerHTML = isActeur ? iconSvg(val) : iconSvg('Autres');
-
-      const name = document.createElement('span');
-      name.className = 'filter-name';
-      name.textContent = val;
-      name.title = val;
-
-      const countEl = document.createElement('span');
-      countEl.className = 'filter-count';
-      countEl.textContent = count;
-      countEls[`${key}:${val}`] = countEl;
-
-      const soloBtn = document.createElement('button');
-      soloBtn.className = 'solo-btn';
-      soloBtn.title = `Afficher uniquement "${val}"`;
-      soloBtn.addEventListener('click', e => { e.stopPropagation(); soloFilter(key, val); });
-
-      row.append(cb, badge, name, countEl, soloBtn);
-      optsList.appendChild(row);
-    });
-
-    section.appendChild(optsList);
-    container.appendChild(section);
-
-    masterCb.addEventListener('change', () => {
-      const checked = masterCb.checked;
-      if (checked) activeFilters[key] = new Set(vals);
-      else          activeFilters[key].clear();
-      container.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(c => {
-        c.checked = checked;
-        c.indeterminate = false;
-      });
+    btn.addEventListener('click', e => {
+      if (e.target.closest('.solo-btn')) return;
+      const active = activeFilters['type_acteur'];
+      if (active.has(val)) {
+        active.delete(val);
+        if (active.size === 0) activeFilters['type_acteur'] = new Set(typeVals);
+      } else {
+        active.add(val);
+      }
+      syncTchipStates();
       updateView();
     });
-  });
-}
 
-function syncMasterCb(key) {
-  const master = document.getElementById(`master-${key}`);
-  if (!master) return;
-  const all      = [...document.querySelectorAll(`.filter-cb[data-key="${key}"]`)];
-  const nChecked = all.filter(c => c.checked).length;
-  if (nChecked === 0)             { master.checked = false; master.indeterminate = false; }
-  else if (nChecked === all.length) { master.checked = true;  master.indeterminate = false; }
-  else                             { master.checked = false; master.indeterminate = true; }
-}
-
-function soloFilter(key, val) {
-  activeFilters[key] = new Set([val]);
-  document.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(c => {
-    c.checked = c.dataset.val === val;
-  });
-  syncMasterCb(key);
-  updateView();
-}
-
-/* ════════════════════════════════════════
-   ACTIVE FILTER CHIPS (above map)
-════════════════════════════════════════ */
-function renderActiveChips() {
-  const bar = document.getElementById('active-chips');
-  bar.innerHTML = '';
-
-  const searchVal = document.getElementById('search-input').value.trim();
-  if (searchVal) {
-    bar.appendChild(makeChip({
-      cls: 'chip-search',
-      label: `🔎 "${searchVal}"`,
-      onRemove: () => {
-        document.getElementById('search-input').value = '';
-        updateView();
-      }
-    }));
-  }
-
-  CONFIG.filterFields.forEach(({ key, label, isArray }) => {
-    const all = uniqueValues(key, isArray);
-    const active = activeFilters[key] || new Set();
-    const excluded = all.filter(v => !active.has(v));
-    excluded.forEach(val => {
-      const color = key === 'type_acteur'
-        ? (CONFIG.acteurConfig[val] || CONFIG.acteurConfig.default).color
-        : '#0e7490';
-      bar.appendChild(makeChip({
-        dot: color,
-        label: `Sans : ${val}`,
-        onRemove: () => {
-          activeFilters[key].add(val);
-          const cb = document.querySelector(`.filter-cb[data-key="${key}"][data-val="${cssEscape(val)}"]`);
-          if (cb) cb.checked = true;
-          syncMasterCb(key);
-          updateView();
-        }
-      }));
+    btn.querySelector('.solo-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      soloFilter('type_acteur', val);
     });
+
+    typesEl.appendChild(btn);
+    countEls[`type_acteur:${val}`] = btn.querySelector('.ct');
   });
 
-  if (radiusFilter) {
-    bar.appendChild(makeChip({
-      cls: 'chip-radius',
-      label: `📍 ≤ ${radiusFilter.km} km de ${radiusFilter.commune}`,
-      onRemove: () => clearRadius()
-    }));
-  }
-}
+  /* ── Résines → .rpill ── */
+  const resineVals = uniqueValues('type_resine', true);
+  activeFilters['type_resine'] = new Set(resineVals);
 
-function makeChip({ cls = '', dot = null, label, onRemove }) {
-  const el = document.createElement('div');
-  el.className = 'filter-chip' + (cls ? ' ' + cls : '');
-  if (dot) {
-    const d = document.createElement('span');
-    d.className = 'chip-dot';
-    d.style.background = dot;
-    el.appendChild(d);
-  }
-  const lab = document.createElement('span');
-  lab.className = 'chip-label';
-  lab.textContent = label;
-  lab.title = label;
-  el.appendChild(lab);
-  const btn = document.createElement('button');
-  btn.className = 'chip-x';
-  btn.type = 'button';
-  btn.textContent = '×';
-  btn.title = 'Retirer';
-  btn.addEventListener('click', onRemove);
-  el.appendChild(btn);
-  return el;
-}
+  resineVals.forEach(val => {
+    const btn = document.createElement('button');
+    btn.className = 'rpill';
+    btn.dataset.key = 'type_resine';
+    btn.dataset.val = val;
+    btn.innerHTML = `<span class="ic">${checkSvg}</span>${val}`;
 
-function cssEscape(s) {
-  if (window.CSS && CSS.escape) return CSS.escape(s);
-  return String(s).replace(/["\\]/g, '\\$&');
-}
+    btn.addEventListener('click', () => {
+      const active = activeFilters['type_resine'];
+      if (active.has(val)) {
+        active.delete(val);
+        if (active.size === 0) activeFilters['type_resine'] = new Set(resineVals);
+      } else {
+        active.add(val);
+      }
+      syncRpillStates();
+      updateView();
+    });
 
-/* ════════════════════════════════════════
-   COMMUNE DATALIST
-════════════════════════════════════════ */
-function buildCommuneList() {
-  const dl = document.getElementById('commune-list');
-  dl.innerHTML = '';
-  const set = new Set();
-  allData.forEach(a => { if (a.commune) set.add(a.commune); });
-  [...set].sort((a, b) => a.localeCompare(b, 'fr')).forEach(c => {
-    const o = document.createElement('option');
-    o.value = c;
-    dl.appendChild(o);
+    resinesEl.appendChild(btn);
   });
 }
 
+/* ── Synchronisation des états visuels ── */
+function syncTchipStates() {
+  const key    = 'type_acteur';
+  const all    = uniqueValues(key, true);
+  const active = activeFilters[key] || new Set();
+  const allOn  = active.size === all.length;
+  document.querySelectorAll(`.tchip[data-key="${key}"]`).forEach(chip => {
+    chip.classList.remove('on', 'off');
+    if (!allOn) chip.classList.add(active.has(chip.dataset.val) ? 'on' : 'off');
+  });
+}
+
+function syncRpillStates() {
+  const key    = 'type_resine';
+  const all    = uniqueValues(key, true);
+  const active = activeFilters[key] || new Set();
+  const allOn  = active.size === all.length;
+  document.querySelectorAll(`.rpill[data-key="${key}"]`).forEach(pill => {
+    pill.classList.toggle('on', !allOn && active.has(pill.dataset.val));
+  });
+}
+
+function syncFilterStates() { syncTchipStates(); syncRpillStates(); }
+
 /* ════════════════════════════════════════
-   RESET
+   RÉINITIALISER
 ════════════════════════════════════════ */
 document.getElementById('reset-btn').addEventListener('click', () => {
   CONFIG.filterFields.forEach(({ key, isArray }) => {
-    const vals = uniqueValues(key, isArray);
-    activeFilters[key] = new Set(vals);
-    document.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(c => {
-      c.checked = true; c.indeterminate = false;
-    });
-    const m = document.getElementById(`master-${key}`);
-    if (m) { m.checked = true; m.indeterminate = false; }
+    activeFilters[key] = new Set(uniqueValues(key, isArray));
   });
   document.getElementById('search-input').value = '';
+  document.getElementById('search-clear').style.display = 'none';
   clearRadius({ skipUpdate: true });
+  syncFilterStates();
   updateView();
 });
 
-document.getElementById('search-input').addEventListener('input', updateView);
+/* ════════════════════════════════════════
+   RECHERCHE
+════════════════════════════════════════ */
+const searchInput = document.getElementById('search-input');
+const searchClear = document.getElementById('search-clear');
+
+searchInput.addEventListener('input', () => {
+  searchClear.style.display = searchInput.value ? '' : 'none';
+  updateView();
+});
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  searchClear.style.display = 'none';
+  updateView();
+});
 
 /* ════════════════════════════════════════
-   GEOLOCATION
+   GÉOLOCALISATION
 ════════════════════════════════════════ */
 document.getElementById('geo-btn').addEventListener('click', () => {
   if (!navigator.geolocation) return;
@@ -1315,25 +739,48 @@ document.getElementById('geo-btn').addEventListener('click', () => {
 ════════════════════════════════════════ */
 const sidebar     = document.getElementById('sidebar');
 const collapseBtn = document.getElementById('collapse-btn');
-const expandBtn   = document.getElementById('expand-btn');
+const scrim       = document.getElementById('scrim');
+
+/* Sur mobile, sidebar fermée par défaut */
+if (window.innerWidth <= 860) sidebar.classList.add('collapsed');
 
 collapseBtn.addEventListener('click', () => {
-  sidebar.classList.add('collapsed');
-  expandBtn.classList.add('visible');
-  setTimeout(() => map.invalidateSize(), 320);
+  sidebar.classList.toggle('collapsed');
+  const closed = sidebar.classList.contains('collapsed');
+  if (window.innerWidth <= 860) scrim.style.display = closed ? 'none' : 'block';
+  setTimeout(() => map.invalidateSize(), 350);
 });
-expandBtn.addEventListener('click', () => {
+
+/* Mobile : bouton flottant + voile */
+document.getElementById('toggle-btn').addEventListener('click', () => {
   sidebar.classList.remove('collapsed');
-  expandBtn.classList.remove('visible');
-  setTimeout(() => map.invalidateSize(), 320);
+  scrim.style.display = 'block';
+});
+scrim.addEventListener('click', () => {
+  sidebar.classList.add('collapsed');
+  scrim.style.display = 'none';
 });
 
 /* ════════════════════════════════════════
-   FILTER
+   FILTRAGE (logique inchangée)
 ════════════════════════════════════════ */
+function uniqueValues(field, isArray) {
+  const s = new Set();
+  allData.forEach(a => {
+    if (isArray && Array.isArray(a[field])) a[field].forEach(v => s.add(v));
+    else if (a[field]) s.add(a[field]);
+  });
+  return [...s].sort();
+}
+function countValue(field, val, isArray) {
+  return allData.filter(a => {
+    if (isArray && Array.isArray(a[field])) return a[field].includes(val);
+    return a[field] === val;
+  }).length;
+}
 function getFiltered(opts = {}) {
   const skipKey = opts.skipKey || null;
-  const q = document.getElementById('search-input').value.toLowerCase().trim();
+  const q = searchInput.value.toLowerCase().trim();
   return allData.filter(a => {
     if (q) {
       const hay = [
@@ -1347,11 +794,8 @@ function getFiltered(opts = {}) {
       if (key === skipKey) continue;
       const active = activeFilters[key];
       if (!active || active.size === 0) return false;
-      if (isArray) {
-        if (!(a[key] || []).some(v => active.has(v))) return false;
-      } else {
-        if (!active.has(a[key])) return false;
-      }
+      if (isArray) { if (!(a[key] || []).some(v => active.has(v))) return false; }
+      else         { if (!active.has(a[key])) return false; }
     }
     if (radiusFilter) {
       if (a.lat == null || a.lng == null) return false;
@@ -1360,38 +804,105 @@ function getFiltered(opts = {}) {
     return true;
   });
 }
-
 function dynamicCount(key, val, isArray) {
   const base = getFiltered({ skipKey: key });
   if (isArray) return base.filter(a => (a[key] || []).includes(val)).length;
   return base.filter(a => a[key] === val).length;
 }
-
 function refreshCounts() {
+  uniqueValues('type_acteur', true).forEach(val => {
+    const el = countEls[`type_acteur:${val}`];
+    if (!el) return;
+    const cnt = dynamicCount('type_acteur', val, true);
+    el.textContent = `${cnt} acteur${cnt > 1 ? 's' : ''}`;
+  });
+}
+function soloFilter(key, val) {
+  activeFilters[key] = new Set([val]);
+  syncFilterStates();
+  updateView();
+}
+
+/* ════════════════════════════════════════
+   CHIPS ACTIFS AU-DESSUS DE LA CARTE
+════════════════════════════════════════ */
+function renderActiveChips() {
+  const bar = document.getElementById('active-chips');
+  bar.innerHTML = '';
+
+  const q = searchInput.value.trim();
+  if (q) bar.appendChild(makeChip({
+    label: `"${q}"`,
+    onRemove: () => { searchInput.value = ''; searchClear.style.display = 'none'; updateView(); }
+  }));
+
   CONFIG.filterFields.forEach(({ key, isArray }) => {
-    const vals = uniqueValues(key, isArray);
-    vals.forEach(val => {
-      const el = countEls[`${key}:${val}`];
-      if (el) el.textContent = dynamicCount(key, val, isArray);
+    const all    = uniqueValues(key, isArray);
+    const active = activeFilters[key] || new Set();
+    all.filter(v => !active.has(v)).forEach(val => {
+      const color = key === 'type_acteur'
+        ? (CONFIG.acteurConfig[val] || CONFIG.acteurConfig.default).color
+        : '#0e7490';
+      bar.appendChild(makeChip({
+        dot: color,
+        label: `Sans : ${val}`,
+        onRemove: () => {
+          activeFilters[key].add(val);
+          syncFilterStates();
+          updateView();
+        }
+      }));
     });
+  });
+
+  if (radiusFilter) bar.appendChild(makeChip({
+    label: `≤ ${radiusFilter.km} km de ${radiusFilter.commune}`,
+    onRemove: () => clearRadius()
+  }));
+}
+
+function makeChip({ dot = null, label, onRemove }) {
+  const el  = document.createElement('div');
+  el.className = 'filter-chip';
+  if (dot) {
+    const d = document.createElement('span');
+    d.className = 'chip-dot'; d.style.background = dot; el.appendChild(d);
+  }
+  const lab = document.createElement('span');
+  lab.className = 'chip-label'; lab.textContent = label; lab.title = label;
+  el.appendChild(lab);
+  const btn = document.createElement('button');
+  btn.className = 'chip-x'; btn.type = 'button'; btn.textContent = '×'; btn.title = 'Retirer';
+  btn.addEventListener('click', onRemove);
+  el.appendChild(btn);
+  return el;
+}
+
+/* ════════════════════════════════════════
+   LISTE DES COMMUNES (datalist)
+════════════════════════════════════════ */
+function buildCommuneList() {
+  const dl = document.getElementById('commune-list');
+  dl.innerHTML = '';
+  const set = new Set();
+  allData.forEach(a => { if (a.commune) set.add(a.commune); });
+  [...set].sort((a, b) => a.localeCompare(b, 'fr')).forEach(c => {
+    const o = document.createElement('option'); o.value = c; dl.appendChild(o);
   });
 }
 
 /* ════════════════════════════════════════
-   RENDER: MAP
+   RENDER : CARTE
 ════════════════════════════════════════ */
 function renderMap(filtered) {
   clusterGroup.clearLayers();
   filtered.forEach(a => {
     if (a.lat == null || a.lng == null) return;
     const marker = L.marker([a.lat, a.lng], { icon: makeIcon(a.type_acteur) });
-    marker.bindPopup(buildPopup(a), { className: 'custom-popup', maxWidth: 300 });
+    marker.bindPopup(buildPopup(a), { maxWidth: 260 });
     if (a.nom) {
       marker.bindTooltip(a.nom, {
-        className: 'mm-name-tip',
-        direction: 'top',
-        offset: [0, -18],
-        opacity: 1
+        className: 'mm-name-tip', direction: 'top', offset: [0, -18], opacity: 1
       });
     }
     clusterGroup.addLayer(marker);
@@ -1399,35 +910,64 @@ function renderMap(filtered) {
 }
 
 /* ════════════════════════════════════════
-   RENDER: CARDS
+   RENDER : CARTES (vue Liste)
 ════════════════════════════════════════ */
 function renderCards() {
   const filtered = getFiltered();
-  document.getElementById('list-hdr').innerHTML =
-    `<strong>${filtered.length}</strong> acteur${filtered.length > 1 ? 's' : ''}`;
+  const countEl  = document.getElementById('list-count');
+  if (countEl) countEl.innerHTML = `<b>${filtered.length}</b> acteur${filtered.length > 1 ? 's' : ''}`;
   const grid = document.getElementById('cards-grid');
   grid.innerHTML = '';
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="box">
+      <div class="ic"><svg viewBox="0 0 24 24" width="26" height="26" fill="none"
+        stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+        stroke-linejoin="round">${window.ICONS.search}</svg></div>
+      <h3>Aucun acteur trouvé</h3>
+      <p>Modifiez vos filtres ou votre recherche.</p>
+    </div></div>`;
+    return;
+  }
+
   filtered.forEach(a => {
-    const { color } = acteurInfo(a.type_acteur);
-    const types = Array.isArray(a.type_acteur) ? a.type_acteur.join(', ') : (a.type_acteur || '—');
-    const card = document.createElement('div');
-    card.className = 'actor-card';
-    card.style.borderLeftColor = color;
+    const types    = sortTypes(Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur].filter(Boolean));
+    const mainType = types[0] || 'default';
+    const c        = typeColor(mainType);
+    const iconHtml = iconFromAtelier(mainType, 21, 2);
+    const dist     = actorDistance(a);
+    const resBadges = (a.type_resine || []).map(r => `<span>${r}</span>`).join('');
+    const locHtml = a.commune
+      ? `<span><svg viewBox="0 0 24 24" width="14" height="14" fill="none"
+          stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+          stroke-linejoin="round">${window.ICONS.pin}</svg>${a.commune}${a.code_postal ? ' ' + a.code_postal : ''}</span>`
+      : '';
+    const distBadge = dist != null
+      ? `<span class="card-dist"><svg viewBox="0 0 24 24" width="13" height="13" fill="none"
+          stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+          stroke-linejoin="round">${window.ICONS.route}</svg>${dist.toFixed(1)} km</span>`
+      : '';
+    const card = document.createElement('article');
+    card.className = 'card';
+    card.style.setProperty('--c', c);
     card.innerHTML = `
-      <div class="card-nom">${a.nom}</div>
-      <div class="card-type">${types}</div>
-      ${a.commune ? `<div class="card-info"><span>📍</span>${a.commune}${a.code_postal ? ' ' + a.code_postal : ''}</div>` : ''}
-      ${a.telephone ? `<div class="card-info"><span>📞</span>${a.telephone}</div>` : ''}
-      ${(a.type_resine || []).length ? `
-        <div class="card-resines">
-          ${(a.type_resine).map(r => `<span class="card-res-badge">${r}</span>`).join('')}
-        </div>` : ''}`;
+      <div class="card-top">
+        <div class="card-ic">${iconHtml}</div>
+        <div class="card-hd">
+          <div class="card-type">${types.join(' · ')}</div>
+          <h3>${a.nom}</h3>
+        </div>
+      </div>
+      ${locHtml ? `<div class="card-meta">${locHtml}</div>` : ''}
+      ${resBadges ? `<div class="card-res">${resBadges}</div>` : ''}
+      ${distBadge}
+    `;
     grid.appendChild(card);
   });
 }
 
 /* ════════════════════════════════════════
-   RENDER: TABLE (with sort)
+   RENDER : TABLEAU
 ════════════════════════════════════════ */
 function getSortedFiltered() {
   let filtered = getFiltered();
@@ -1435,83 +975,72 @@ function getSortedFiltered() {
   if (col) {
     const dir = sortCol ? sortDir : 1;
     filtered = [...filtered].sort((a, b) => {
-      const va = colVal(a, col);
-      const vb = colVal(b, col);
+      const va = colVal(a, col), vb = colVal(b, col);
       if (typeof va === 'number' && typeof vb === 'number') return (va - vb) * dir;
       return String(va).localeCompare(String(vb), 'fr', { sensitivity: 'base' }) * dir;
     });
   }
   return filtered;
 }
-
+function colVal(a, col) {
+  if (col === 'nom')         return a.nom || '';
+  if (col === 'type_acteur') return (Array.isArray(a.type_acteur) ? a.type_acteur[0] : a.type_acteur) || '';
+  if (col === 'commune')     return a.commune || a.adresse || '';
+  if (col === 'type_resine') return (a.type_resine || []).join(',');
+  if (col === 'distance')    { const d = actorDistance(a); return d == null ? Infinity : d; }
+  return '';
+}
 function renderTable() {
   const filtered = getSortedFiltered();
-  document.getElementById('table-count').innerHTML =
-    `<strong>${filtered.length}</strong> acteur${filtered.length > 1 ? 's' : ''}`;
-
+  const countEl  = document.getElementById('table-count');
+  if (countEl) countEl.innerHTML = `<b>${filtered.length}</b> acteur${filtered.length > 1 ? 's' : ''}`;
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
   filtered.forEach(a => {
-    const types = Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur || ''];
-    const typesHtml = types.map(t => {
-      const { color } = CONFIG.acteurConfig[t] || CONFIG.acteurConfig['default'];
-      return `<span class="lt-dot" style="background:${color}"></span>${t}`;
-    }).join(', ');
-    const dist = actorDistance(a);
-    const distCell = dist != null ? `${dist.toFixed(1)} km` : '—';
+    const types    = sortTypes(Array.isArray(a.type_acteur) ? a.type_acteur : [a.type_acteur || '']);
+    const mainType = types[0] || 'default';
+    const c        = typeColor(mainType);
+    const iconHtml = iconFromAtelier(mainType, 15, 2.2);
+    const dist     = actorDistance(a);
+    const resBadges = (a.type_resine || []).map(r => `<span>${r}</span>`).join('');
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><strong>${a.nom}</strong></td>
-      <td>${typesHtml}</td>
-      <td>${a.commune || a.adresse || '—'}</td>
-      <td>${(a.type_resine || []).join(', ') || '—'}</td>
-      <td class="col-distance">${distCell}</td>`;
+      <td><div class="tbl-name">
+        <span class="tbl-dot" style="--c:${c}">${iconHtml}</span>
+        <b>${a.nom}</b>
+      </div></td>
+      <td><span class="tbl-badge"
+        style="background:color-mix(in srgb,${c} 12%,var(--panel));color:${c}">${types.join(' · ')}</span></td>
+      <td>${a.commune || a.adresse || '—'}<span class="faint">${a.code_postal ? ' (' + a.code_postal + ')' : ''}</span></td>
+      <td><div class="tbl-res">${resBadges || '<span class="faint">—</span>'}</div></td>
+      <td class="col-distance"><span class="tbl-dist${dist == null ? ' faint' : ''}">${dist != null ? dist.toFixed(1) + ' km' : '—'}</span></td>`;
     tbody.appendChild(tr);
   });
 }
 
-function colVal(a, col) {
-  if (col === 'nom')          return a.nom || '';
-  if (col === 'type_acteur')  return (Array.isArray(a.type_acteur) ? a.type_acteur[0] : a.type_acteur) || '';
-  if (col === 'commune')      return a.commune || a.adresse || '';
-  if (col === 'type_resine')  return (a.type_resine || []).join(',');
-  if (col === 'distance') {
-    const d = actorDistance(a);
-    return d == null ? Infinity : d;
-  }
-  return '';
-}
-
-/* Table column sort */
+/* Tri du tableau */
 document.querySelectorAll('#data-table th').forEach(th => {
   th.addEventListener('click', () => {
     const col = th.dataset.col;
-    if (sortCol === col) {
-      sortDir *= -1;
-    } else {
-      sortCol = col;
-      sortDir = 1;
-    }
-    document.querySelectorAll('#data-table th').forEach(h => {
-      h.classList.remove('sort-asc', 'sort-desc');
-      h.querySelector('.sort-icon').textContent = '↕';
-    });
-    th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
-    th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
+    if (sortCol === col) sortDir *= -1;
+    else { sortCol = col; sortDir = 1; }
+    document.querySelectorAll('#data-table th').forEach(h => h.classList.remove('sorted'));
+    th.classList.add('sorted');
     renderTable();
     syncUrl();
   });
 });
 
 /* ════════════════════════════════════════
-   UPDATE ALL VIEWS
+   UPDATE GLOBAL
 ════════════════════════════════════════ */
 function updateView() {
   const filtered = getFiltered();
-  const n = filtered.length;
-  document.getElementById('results-count').innerHTML =
-    `<strong>${n}</strong> acteur${n > 1 ? 's' : ''} affiché${n > 1 ? 's' : ''} sur ${allData.length}`;
-
+  const n        = filtered.length;
+  const hdrCount = document.getElementById('hdr-count');
+  const hdrTotal = document.getElementById('hdr-total');
+  if (hdrCount) hdrCount.textContent = n;
+  if (hdrTotal) hdrTotal.textContent = `/ ${allData.length} acteurs`;
   renderMap(filtered);
   renderActiveChips();
   refreshCounts();
@@ -1521,8 +1050,32 @@ function updateView() {
 }
 
 /* ════════════════════════════════════════
-   RADIUS FILTER (proximity)
+   FILTRE PROXIMITÉ / RAYON
 ════════════════════════════════════════ */
+function updateProxSwitch() {
+  const sw   = document.getElementById('prox-switch');
+  const prox = document.getElementById('proximity-section');
+  if (sw)   sw.classList.toggle('on',   !!radiusFilter);
+  if (prox) prox.classList.toggle('on', !!radiusFilter);
+}
+
+function drawRadiusCircle(recenter = true) {
+  if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
+  if (!radiusFilter) return;
+  const accent = getComputedStyle(document.documentElement)
+                   .getPropertyValue('--accent').trim() || '#0E8C53';
+  radiusCircle = L.circle([radiusFilter.lat, radiusFilter.lng], {
+    radius:      radiusFilter.km * 1000,
+    color:       accent,
+    weight:      2,
+    dashArray:   '6 4',
+    fillColor:   accent,
+    fillOpacity: 0.07,
+    interactive: false
+  }).addTo(map);
+  if (recenter) map.fitBounds(radiusCircle.getBounds(), { padding: [40, 40], maxZoom: 12 });
+}
+
 function findLocalCommune(name) {
   const target = name.trim().toLowerCase();
   if (!target) return null;
@@ -1531,61 +1084,32 @@ function findLocalCommune(name) {
   if (hit) return { commune: hit.commune, lat: hit.lat, lng: hit.lng };
   return null;
 }
-
 async function geocodeCommune(name) {
   const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ', France')}&format=json&limit=1&countrycodes=fr`;
   const res = await fetch(url, { headers: { 'Accept-Language': 'fr' } });
   if (!res.ok) throw new Error('HTTP ' + res.status);
   const arr = await res.json();
   if (!arr.length) throw new Error('Commune introuvable');
-  return {
-    commune: name,
-    lat: parseFloat(arr[0].lat),
-    lng: parseFloat(arr[0].lon)
-  };
+  return { commune: name, lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon) };
 }
-
-function drawRadiusCircle(recenter = true) {
-  if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
-  if (!radiusFilter) return;
-  radiusCircle = L.circle([radiusFilter.lat, radiusFilter.lng], {
-    radius: radiusFilter.km * 1000,
-    color: '#1976d2',
-    weight: 2,
-    fillColor: '#1976d2',
-    fillOpacity: 0.07,
-    interactive: false
-  }).addTo(map);
-  if (recenter) {
-    map.fitBounds(radiusCircle.getBounds(), { padding: [40, 40], maxZoom: 12 });
-  }
-}
-
 async function setRadius(commune, km, opts = {}) {
   const status = document.getElementById('prox-status');
-  status.className = '';
-  status.textContent = '';
+  status.className = ''; status.textContent = '';
   if (!commune) return;
   let resolved = findLocalCommune(commune);
   if (!resolved) {
     status.textContent = 'Recherche…';
-    try {
-      resolved = await geocodeCommune(commune);
-    } catch (e) {
-      status.className = 'error';
-      status.textContent = 'Commune introuvable';
-      return;
-    }
+    try       { resolved = await geocodeCommune(commune); }
+    catch (e) { status.className = 'error'; status.textContent = 'Commune introuvable'; return; }
   }
   radiusFilter = { commune: resolved.commune, lat: resolved.lat, lng: resolved.lng, km };
   document.body.classList.add('has-radius');
   document.getElementById('prox-clear').style.display = '';
-  status.className = 'ok';
-  status.textContent = `📍 ${resolved.commune}`;
+  status.className = 'ok'; status.textContent = `📍 ${resolved.commune}`;
   drawRadiusCircle(opts.recenter !== false);
+  updateProxSwitch();
   updateView();
 }
-
 function clearRadius(opts = {}) {
   radiusFilter = null;
   if (radiusCircle) { map.removeLayer(radiusCircle); radiusCircle = null; }
@@ -1593,28 +1117,34 @@ function clearRadius(opts = {}) {
   document.getElementById('prox-input').value = '';
   document.getElementById('prox-clear').style.display = 'none';
   const status = document.getElementById('prox-status');
-  status.className = '';
-  status.textContent = '';
+  status.className = ''; status.textContent = '';
+  updateProxSwitch();
   if (!opts.skipUpdate) updateView();
 }
 
 document.getElementById('prox-apply').addEventListener('click', () => {
-  const v = document.getElementById('prox-input').value.trim();
+  const v  = document.getElementById('prox-input').value.trim();
   const km = parseInt(document.getElementById('prox-radius').value, 10);
   if (v) setRadius(v, km);
 });
 document.getElementById('prox-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    e.preventDefault();
-    document.getElementById('prox-apply').click();
-  }
+  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('prox-apply').click(); }
 });
 document.getElementById('prox-clear').addEventListener('click', () => clearRadius());
+
+document.getElementById('prox-switch').addEventListener('click', () => {
+  if (radiusFilter) clearRadius();
+  else {
+    const v  = document.getElementById('prox-input').value.trim();
+    const km = parseInt(document.getElementById('prox-radius').value, 10);
+    if (v) setRadius(v, km);
+  }
+});
 
 const radiusSlider = document.getElementById('prox-radius');
 const radiusLabel  = document.getElementById('prox-radius-val');
 radiusSlider.addEventListener('input', () => {
-  radiusLabel.textContent = radiusSlider.value + ' km';
+  radiusLabel.textContent = radiusSlider.value;
 });
 radiusSlider.addEventListener('change', () => {
   if (radiusFilter) {
@@ -1625,7 +1155,7 @@ radiusSlider.addEventListener('change', () => {
 });
 
 /* ════════════════════════════════════════
-   CSV EXPORT
+   EXPORT CSV (logique inchangée)
 ════════════════════════════════════════ */
 function csvCell(v) {
   if (v == null) return '';
@@ -1633,58 +1163,45 @@ function csvCell(v) {
   if (/[",;\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
   return s;
 }
-
 function exportCsv() {
-  const rows = getSortedFiltered();
+  const rows      = getSortedFiltered();
   const hasRadius = !!radiusFilter;
-  const headers = ['Nom', "Type d'acteur", 'Commune', 'Code postal', 'Adresse', 'Résines', 'Téléphone', 'Email', 'Site web', 'Latitude', 'Longitude'];
+  const headers   = ['Nom', "Type d'acteur", 'Commune', 'Code postal', 'Adresse',
+                      'Résines', 'Téléphone', 'Email', 'Site web', 'Latitude', 'Longitude'];
   if (hasRadius) headers.push('Distance (km)');
   const lines = [headers.map(csvCell).join(';')];
   rows.forEach(a => {
     const cells = [
-      a.nom,
-      (a.type_acteur || []).join(', '),
-      a.commune || '',
-      a.code_postal || '',
-      a.adresse || '',
-      (a.type_resine || []).join(', '),
-      a.telephone || '',
-      a.email || '',
-      a.site_web || '',
-      a.lat != null ? a.lat : '',
-      a.lng != null ? a.lng : ''
+      a.nom, (a.type_acteur || []).join(', '),
+      a.commune || '', a.code_postal || '', a.adresse || '',
+      (a.type_resine || []).join(', '), a.telephone || '',
+      a.email || '', a.site_web || '',
+      a.lat != null ? a.lat : '', a.lng != null ? a.lng : ''
     ];
-    if (hasRadius) {
-      const d = actorDistance(a);
-      cells.push(d != null ? d.toFixed(2) : '');
-    }
+    if (hasRadius) cells.push(actorDistance(a)?.toFixed(2) ?? '');
     lines.push(cells.map(csvCell).join(';'));
   });
-  const csv = '﻿' + lines.join('\r\n');
+  const csv  = '﻿' + lines.join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const date = new Date().toISOString().slice(0, 10);
-  a.download = `acteurs-plastiques-${date}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+  const url  = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `acteurs-plastiques-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link); link.click(); document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
 document.getElementById('csv-export-btn').addEventListener('click', exportCsv);
 
 /* ════════════════════════════════════════
-   URL SYNC (shareable state)
+   URL SYNC (logique inchangée)
 ════════════════════════════════════════ */
 function syncUrl() {
   if (suppressUrlSync) return;
   const params = new URLSearchParams();
-  const q = document.getElementById('search-input').value.trim();
+  const q = searchInput.value.trim();
   if (q) params.set('q', q);
   CONFIG.filterFields.forEach(({ key, isArray }) => {
-    const all = uniqueValues(key, isArray);
+    const all    = uniqueValues(key, isArray);
     const active = activeFilters[key] || new Set();
     if (active.size !== all.length) {
       const short = key === 'type_acteur' ? 'types' : key === 'type_resine' ? 'resines' : key;
@@ -1694,12 +1211,11 @@ function syncUrl() {
   if (currentView !== 'carte') params.set('view', currentView);
   if (radiusFilter) {
     params.set('commune', radiusFilter.commune);
-    params.set('radius', String(radiusFilter.km));
+    params.set('radius',  String(radiusFilter.km));
   }
   if (sortCol) params.set('sort', `${sortCol}:${sortDir === 1 ? 'asc' : 'desc'}`);
   const qs = params.toString();
-  const newUrl = location.pathname + (qs ? '?' + qs : '');
-  history.replaceState(null, '', newUrl);
+  history.replaceState(null, '', location.pathname + (qs ? '?' + qs : ''));
 }
 
 function applyUrlState() {
@@ -1707,59 +1223,53 @@ function applyUrlState() {
   suppressUrlSync = true;
 
   const q = params.get('q');
-  if (q) document.getElementById('search-input').value = q;
+  if (q) { searchInput.value = q; searchClear.style.display = ''; }
 
   const keyMap = { types: 'type_acteur', resines: 'type_resine' };
   Object.entries(keyMap).forEach(([short, key]) => {
     if (!params.has(short)) return;
+    const all    = uniqueValues(key, CONFIG.filterFields.find(f => f.key === key)?.isArray || false);
     const wanted = new Set(params.get(short).split(',').filter(Boolean));
-    document.querySelectorAll(`.filter-cb[data-key="${key}"]`).forEach(cb => {
-      cb.checked = wanted.has(cb.dataset.val);
-    });
-    activeFilters[key] = new Set(
-      [...document.querySelectorAll(`.filter-cb[data-key="${key}"]`)]
-        .filter(cb => cb.checked).map(cb => cb.dataset.val)
-    );
-    syncMasterCb(key);
+    const next   = new Set(all.filter(v => wanted.has(v)));
+    if (next.size > 0) activeFilters[key] = next;
   });
 
   const view = params.get('view');
-  if (view && ['carte', 'liste', 'tableau'].includes(view)) {
-    const btn = document.querySelector(`.view-btn[data-view="${view}"]`);
-    if (btn && view !== currentView) btn.click();
+  if (view && ['carte', 'liste', 'tableau'].includes(view) && view !== currentView) {
+    currentView = view;
+    document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('on'));
+    const vBtn = document.querySelector(`#view-toggle button[data-view="${view}"]`);
+    if (vBtn) vBtn.classList.add('on');
+    listPanel.classList.remove('open');
+    tablePanel.classList.remove('open');
+    if (view === 'liste')   listPanel.classList.add('open');
+    if (view === 'tableau') tablePanel.classList.add('open');
   }
 
   const sortP = params.get('sort');
   if (sortP) {
     const [col, dir] = sortP.split(':');
-    sortCol = col;
-    sortDir = dir === 'desc' ? -1 : 1;
-    document.querySelectorAll('#data-table th').forEach(h => {
-      h.classList.remove('sort-asc', 'sort-desc');
-      h.querySelector('.sort-icon').textContent = '↕';
-    });
+    sortCol = col; sortDir = dir === 'desc' ? -1 : 1;
     const th = document.querySelector(`#data-table th[data-col="${col}"]`);
-    if (th) {
-      th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
-      th.querySelector('.sort-icon').textContent = sortDir === 1 ? '↑' : '↓';
-    }
+    if (th) th.classList.add('sorted');
   }
 
   const commune = params.get('commune');
-  const radius = params.get('radius');
+  const radius  = params.get('radius');
   suppressUrlSync = false;
+  syncFilterStates();
 
   if (commune && radius) {
     const km = parseInt(radius, 10);
     document.getElementById('prox-input').value = commune;
-    document.getElementById('prox-radius').value = String(km);
-    document.getElementById('prox-radius-val').textContent = km + ' km';
+    radiusSlider.value          = String(km);
+    radiusLabel.textContent     = km;
     setRadius(commune, km, { recenter: true });
   }
 }
 
 /* ════════════════════════════════════════
-   LEGEND
+   LÉGENDE
 ════════════════════════════════════════ */
 function buildLegend() {
   const body = document.getElementById('legend-body');
@@ -1767,18 +1277,13 @@ function buildLegend() {
     .filter(t => CONFIG.acteurConfig[t])
     .map(t => {
       const info = CONFIG.acteurConfig[t];
-      return `<div class="leg-row">
-        <span class="leg-badge" style="background:${info.color}">${iconSvg(t)}</span>
-        <span class="leg-label">${info.label}</span>
-      </div>`;
+      const c    = info.cssVar ? `var(${info.cssVar})` : info.color;
+      return `<li><span class="sw" style="background:${c}"></span><b>${info.label}</b></li>`;
     }).join('');
 }
-document.getElementById('legend-hdr').addEventListener('click', () => {
-  document.getElementById('legend').classList.toggle('collapsed');
-});
 
 /* ════════════════════════════════════════
-   DATA LOADING
+   CHARGEMENT DES DONNÉES
 ════════════════════════════════════════ */
 fetch(CONFIG.dataUrl)
   .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
@@ -1792,10 +1297,9 @@ fetch(CONFIG.dataUrl)
   })
   .catch(err => {
     console.error('Erreur chargement JSON:', err);
-    document.getElementById('results-count').innerHTML =
-      '<span style="color:#ef4444">Impossible de charger data/acteurs.json</span>';
+    const hdrCount = document.getElementById('hdr-count');
+    if (hdrCount) { hdrCount.textContent = '!'; hdrCount.style.color = '#ef4444'; }
   });
 </script>
-
 </body>
 </html>

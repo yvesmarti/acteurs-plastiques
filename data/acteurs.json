@@ -541,5 +541,17 @@
     "type_resine": [],
     "lat": 49.13968,
     "lng": -1.01073
+  },
+  {
+    "nom": "TEST",
+    "commune": "TEST",
+    "type_acteur": [
+      "Trieur",
+      "Broyeur",
+      "Plasturgiste"
+    ],
+    "type_resine": [],
+    "lat": 47.525597,
+    "lng": 2.036579
   }
 ]

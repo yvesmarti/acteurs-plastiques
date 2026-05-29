@@ -33,7 +33,17 @@
     body.has-radius .col-distance { display: table-cell; }
 
     /* Chips filtres actifs flottant sur la carte */
-    #active-chips { display: none; }
+    #active-chips {
+      display: none;
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 220px;
+      z-index: 499;
+      flex-wrap: wrap;
+      gap: 7px;
+      pointer-events: none;
+    }
     .filter-chip {
       pointer-events: auto; display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 6px 4px 10px; background: var(--panel);
@@ -123,9 +133,20 @@
     .tchip:hover .solo-btn { opacity: 1; }
     .tchip .solo-btn:hover  { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
+    /* Masquer les contrôles carte dans les vues liste/tableau */
+    body[data-view="liste"] .map-ctrl,
+    body[data-view="tableau"] .map-ctrl,
+    body[data-view="liste"] #active-chips,
+    body[data-view="tableau"] #active-chips { display: none !important; }
+
     /* Responsive : chips plus haut sur mobile (sous .mobile-filter) */
     @media (max-width: 860px) {
       #active-chips { left: 12px; right: 12px; top: 60px; }
+      /* Masquer le bouton Filtres et les contrôles carte dans les vues liste/tableau */
+      body[data-view="liste"] .mobile-filter,
+      body[data-view="tableau"] .mobile-filter { display: none; }
+      .table-wrap { padding: 0 12px 16px; }
+      .view-bar { padding: 12px 16px 0; }
     }
   </style>
 </head>
@@ -489,6 +510,7 @@ document.getElementById('zoom-out').addEventListener('click', () => map.zoomOut(
 let allData         = [];
 let activeFilters   = {};
 let currentView     = 'carte';
+document.body.dataset.view = 'carte';
 let sortCol         = null;
 let sortDir         = 1;
 let radiusFilter    = null;
@@ -519,13 +541,14 @@ document.querySelectorAll('#view-toggle button').forEach(btn => {
     const view = btn.dataset.view;
     if (view === currentView) return;
     currentView = view;
+    document.body.dataset.view = view;
     document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
     listPanel.classList.remove('open');
     tablePanel.classList.remove('open');
     if (view === 'liste')   { listPanel.classList.add('open');  renderCards(); }
     if (view === 'tableau') { tablePanel.classList.add('open'); renderTable(); }
-    if (view === 'carte')   { setTimeout(() => map.invalidateSize(), 50); }
+    if (view === 'carte')   { renderMap(getFiltered()); setTimeout(() => map.invalidateSize(), 50); }
     syncUrl();
   });
 });
@@ -866,6 +889,8 @@ function renderActiveChips() {
     label: `≤ ${radiusFilter.km} km de ${radiusFilter.commune}`,
     onRemove: () => clearRadius()
   }));
+
+  bar.style.display = bar.children.length > 0 ? 'flex' : 'none';
 }
 
 function makeChip({ dot = null, label, onRemove }) {
@@ -1048,7 +1073,7 @@ function updateView() {
   const hdrTotal = document.getElementById('hdr-total');
   if (hdrCount) hdrCount.textContent = n;
   if (hdrTotal) hdrTotal.textContent = `/ ${allData.length} acteurs`;
-  renderMap(filtered);
+  if (currentView === 'carte') renderMap(filtered);
   renderActiveChips();
   refreshCounts();
   if (currentView === 'liste')   renderCards();
@@ -1244,6 +1269,7 @@ function applyUrlState() {
   const view = params.get('view');
   if (view && ['carte', 'liste', 'tableau'].includes(view) && view !== currentView) {
     currentView = view;
+    document.body.dataset.view = view;
     document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('on'));
     const vBtn = document.querySelector(`#view-toggle button[data-view="${view}"]`);
     if (vBtn) vBtn.classList.add('on');

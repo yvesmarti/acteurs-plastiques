@@ -544,11 +544,12 @@ document.querySelectorAll('#view-toggle button').forEach(btn => {
     document.body.dataset.view = view;
     document.querySelectorAll('#view-toggle button').forEach(b => b.classList.remove('on'));
     btn.classList.add('on');
+    map.closePopup();
     listPanel.classList.remove('open');
     tablePanel.classList.remove('open');
-    if (view === 'liste')   { listPanel.classList.add('open');  renderCards(); }
-    if (view === 'tableau') { tablePanel.classList.add('open'); renderTable(); }
-    if (view === 'carte')   { renderMap(getFiltered()); setTimeout(() => map.invalidateSize(), 50); }
+    if (view === 'liste')   { listPanel.classList.add('open');  listPanel.querySelector('.ov-scroll').scrollTop = 0; renderCards(); }
+    if (view === 'tableau') { tablePanel.classList.add('open'); tablePanel.querySelector('.ov-scroll').scrollTop = 0; renderTable(); }
+    if (view === 'carte')   { renderMap(getFiltered()); setTimeout(() => map.invalidateSize(), 150); }
     syncUrl();
   });
 });

@@ -33,12 +33,7 @@
     body.has-radius .col-distance { display: table-cell; }
 
     /* Chips filtres actifs flottant sur la carte */
-    #active-chips {
-      position: absolute; top: 12px; left: 12px; right: 260px;
-      z-index: 450; display: flex; flex-wrap: wrap; gap: 6px;
-      pointer-events: none;
-    }
-    #active-chips:empty { display: none; }
+    #active-chips { display: none; }
     .filter-chip {
       pointer-events: auto; display: inline-flex; align-items: center; gap: 6px;
       padding: 4px 6px 4px 10px; background: var(--panel);
@@ -209,6 +204,7 @@
       <div class="fgroup">
         <div class="fgroup-hd">
           <span class="label-kicker">Type d'acteur</span>
+          <button class="reset-btn" id="select-all-types" style="display:none">Tout afficher</button>
         </div>
         <div class="types" id="type-filter-container"></div>
       </div>
@@ -277,9 +273,9 @@
     <div class="map-ctrl tr">
       <div class="basemap" id="basemap-ctrl">
         <button class="on" data-bm="osm">
-          <span class="ic" data-icon="map" data-size="14"></span>Plan
+          <span class="ic" data-icon="map" data-size="14"></span>OSM
         </button>
-        <button data-bm="carto">OSM</button>
+        <button data-bm="carto">Plan</button>
         <button data-bm="satellite">
           <span class="ic" data-icon="layers" data-size="14"></span>Satellite
         </button>
@@ -678,8 +674,10 @@ function syncTchipStates() {
   const allOn  = active.size === all.length;
   document.querySelectorAll(`.tchip[data-key="${key}"]`).forEach(chip => {
     chip.classList.remove('on', 'off');
-    if (!allOn) chip.classList.add(active.has(chip.dataset.val) ? 'on' : 'off');
+    chip.classList.add(active.has(chip.dataset.val) ? 'on' : 'off');
   });
+  const allBtn = document.getElementById('select-all-types');
+  if (allBtn) allBtn.style.display = allOn ? 'none' : '';
 }
 
 function syncRpillStates() {
@@ -693,6 +691,15 @@ function syncRpillStates() {
 }
 
 function syncFilterStates() { syncTchipStates(); syncRpillStates(); }
+
+/* ════════════════════════════════════════
+   TOUT AFFICHER (types acteur)
+════════════════════════════════════════ */
+document.getElementById('select-all-types').addEventListener('click', () => {
+  activeFilters['type_acteur'] = new Set(uniqueValues('type_acteur', true));
+  syncTchipStates();
+  updateView();
+});
 
 /* ════════════════════════════════════════
    RÉINITIALISER
@@ -1293,6 +1300,7 @@ fetch(CONFIG.dataUrl)
     buildCommuneList();
     buildLegend();
     applyUrlState();
+    syncFilterStates();
     updateView();
   })
   .catch(err => {

@@ -1,0 +1,61 @@
+name: Convertir Excel → JSON
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**.xlsx"
+  # Déclenchement manuel depuis l'interface GitHub (onglet Actions)
+  workflow_dispatch:
+    inputs:
+      excel_file:
+        description: "Nom du fichier Excel (laisser vide pour auto-détection)"
+        required: false
+        default: ""
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer les dépendances Python
+        run: pip install pandas openpyxl requests
+
+      - name: Détecter le fichier Excel
+        id: find_xlsx
+        run: |
+          if [ -n "${{ github.event.inputs.excel_file }}" ]; then
+            XLSX="${{ github.event.inputs.excel_file }}"
+          else
+            XLSX=$(find . -maxdepth 1 -name "*.xlsx" | head -1)
+          fi
+          if [ -z "$XLSX" ]; then
+            echo "Aucun fichier .xlsx trouvé à la racine du dépôt !"
+            exit 1
+          fi
+          echo "xlsx=$XLSX" >> $GITHUB_OUTPUT
+          echo "Fichier détecté : $XLSX"
+
+      - name: Convertir Excel → JSON
+        run: python convert_excel.py "${{ steps.find_xlsx.outputs.xlsx }}" data/acteurs.json
+
+      - name: Committer le JSON mis à jour
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/acteurs.json
+          if git diff --staged --quiet; then
+            echo "Aucun changement détecté dans le JSON — rien à committer."
+          else
+            XLSX_NAME=$(basename "${{ steps.find_xlsx.outputs.xlsx }}")
+            git commit -m "Mise à jour acteurs.json depuis ${XLSX_NAME}"
+            git push
+          fi

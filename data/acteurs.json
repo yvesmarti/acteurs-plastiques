@@ -550,8 +550,13 @@
       "Broyeur",
       "Plasturgiste"
     ],
-    "type_resine": [],
-    "lat": 47.525597,
-    "lng": 2.036579
+    "type_resine": [
+      "PA",
+      "PP",
+      "PS",
+      "PVC"
+    ],
+    "lat": 49.29328,
+    "lng": -0.115674
   }
 ]
